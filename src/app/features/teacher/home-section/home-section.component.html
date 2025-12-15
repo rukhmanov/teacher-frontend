@@ -1,0 +1,60 @@
+<div class="home-section">
+  <div class="section-layout">
+    <aside class="sidebar" *ngIf="teacher || isEditMode">
+      <div class="sidebar-card">
+        <div class="sidebar-photo" *ngIf="teacher">
+          <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
+            [alt]="teacher.firstName + ' ' + teacher.lastName" />
+        </div>
+        <h3 *ngIf="teacher">{{ teacher.firstName }} {{ teacher.lastName }}</h3>
+        <p *ngIf="teacher?.bio" class="sidebar-bio">{{ teacher?.bio }}</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div *ngIf="isEditMode" class="post-form-section">
+        <button class="btn btn-primary" (click)="showPostForm = !showPostForm">
+          {{ showPostForm ? 'Отменить' : 'Создать пост' }}
+        </button>
+
+        <form *ngIf="showPostForm" class="post-form card" (ngSubmit)="createPost()">
+          <div class="form-group">
+            <label class="form-label">Заголовок</label>
+            <input type="text" class="form-control" [(ngModel)]="newPost.title" name="title" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Содержание</label>
+            <textarea class="form-control" [(ngModel)]="newPost.content" name="content" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Опубликовать</button>
+        </form>
+      </div>
+
+      <div class="posts-list">
+        <div *ngFor="let post of posts" class="post-card card">
+          <div class="post-header">
+            <h3>{{ post.title }}</h3>
+            <span class="post-date">
+              {{ post.createdAt | date: 'dd.MM.yyyy' }}
+            </span>
+          </div>
+          <div class="post-content">
+            <p>{{ post.content }}</p>
+            <div *ngIf="post.images && post.images.length > 0" class="post-images">
+              <img *ngFor="let image of post.images" [src]="image" alt="Post image" />
+            </div>
+          </div>
+          <div *ngIf="isEditMode" class="post-actions">
+            <button class="btn btn-secondary" (click)="deletePost(post.id)">
+              Удалить
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="posts.length === 0" class="no-posts">
+          <p>Пока нет постов</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

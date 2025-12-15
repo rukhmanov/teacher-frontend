@@ -1,0 +1,25 @@
+<div class="contact-section">
+  <div class="contact-content">
+    <div class="social-links-section card">
+      <h2>Социальные сети</h2>
+      <div class="social-links-grid">
+        <a *ngFor="let link of socialLinks" [href]="link.url" target="_blank" class="social-link-card">
+          <i [class]="getSocialIcon(link.platform)"></i>
+          <span>{{ link.platform === 'CUSTOM' ? (link.customName || 'Ссылка') : link.platform }}</span>
+        </a>
+      </div>
+      <div *ngIf="socialLinks.length === 0" class="no-links">
+        <p>Нет социальных ссылок</p>
+      </div>
+    </div>
+
+    <div *ngIf="teacher?.location" class="map-section card">
+      <h2>Местоположение</h2>
+      <p class="location-text">{{ teacher?.location }}</p>
+      <div class="map-placeholder">
+        <p>Карта будет отображаться здесь</p>
+        <small>Для интеграции Яндекс карт нужен API ключ</small>
+      </div>
+    </div>
+  </div>
+</div>

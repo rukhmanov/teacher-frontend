@@ -1,0 +1,34 @@
+.presentations-section {
+  padding: 2rem 0;
+}
+
+.section-actions {
+  margin-bottom: 2rem;
+}
+
+.presentation-form {
+  margin-bottom: 2rem;
+}
+
+.presentations-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.presentation-card {
+  h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-orange);
+  }
+
+  .btn {
+    margin-right: 0.5rem;
+  }
+}
+
+.no-items {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-brown);
+}

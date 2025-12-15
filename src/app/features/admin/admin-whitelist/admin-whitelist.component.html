@@ -1,0 +1,30 @@
+<div class="admin-whitelist">
+  <h2>Белый список email</h2>
+
+  <form (ngSubmit)="addEmail()" class="add-email-form card">
+    <div class="form-group">
+      <label class="form-label">Добавить email</label>
+      <div class="input-group">
+        <input type="email" class="form-control" [(ngModel)]="newEmail" name="email" placeholder="email@example.com"
+          required />
+        <button type="submit" class="btn btn-primary">Добавить</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="whitelist-table">
+    <div *ngFor="let item of whitelist" class="whitelist-item card">
+      <div class="email-info">
+        <span class="email">{{ item.email }}</span>
+        <small class="date">{{ item.createdAt | date: 'dd.MM.yyyy' }}</small>
+      </div>
+      <button class="btn btn-secondary" (click)="removeEmail(item.id)">
+        Удалить
+      </button>
+    </div>
+
+    <div *ngIf="whitelist.length === 0" class="no-items">
+      <p>Белый список пуст</p>
+    </div>
+  </div>
+</div>

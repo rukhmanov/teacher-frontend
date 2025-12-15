@@ -1,0 +1,46 @@
+.master-classes-section {
+  padding: 2rem 0;
+}
+
+.section-actions {
+  margin-bottom: 2rem;
+}
+
+.master-class-form {
+  margin-bottom: 2rem;
+}
+
+.master-classes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.master-class-card {
+  h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-orange);
+  }
+
+  .description {
+    font-style: italic;
+    color: var(--text-brown);
+    margin-bottom: 1rem;
+  }
+
+  .content {
+    margin-bottom: 1rem;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid rgba(255, 107, 107, 0.1);
+  }
+}
+
+.no-items {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-brown);
+}

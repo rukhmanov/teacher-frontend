@@ -1,0 +1,16 @@
+.parent-section {
+  padding: 2rem 0;
+}
+
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-card {
+  h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-orange);
+  }
+}

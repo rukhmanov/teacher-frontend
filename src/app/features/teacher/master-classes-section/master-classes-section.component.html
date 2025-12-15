@@ -1,0 +1,44 @@
+<div class="master-classes-section">
+  <div *ngIf="isEditMode" class="section-actions">
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      {{ showForm ? 'Отменить' : 'Добавить мастер-класс' }}
+    </button>
+  </div>
+
+  <form *ngIf="showForm && isEditMode" class="master-class-form card" (ngSubmit)="createMasterClass()">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-control" [(ngModel)]="newMasterClass.title" name="title" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <textarea class="form-control" [(ngModel)]="newMasterClass.description" name="description"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Содержание</label>
+      <textarea class="form-control" [(ngModel)]="newMasterClass.content" name="content" rows="10"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+
+  <div class="master-classes-list">
+    <div *ngFor="let masterClass of masterClasses" class="master-class-card card">
+      <h3>{{ masterClass.title }}</h3>
+      <p *ngIf="masterClass.description" class="description">
+        {{ masterClass.description }}
+      </p>
+      <div *ngIf="masterClass.content" class="content">
+        <p [innerHTML]="masterClass.content"></p>
+      </div>
+      <div *ngIf="isEditMode" class="actions">
+        <button class="btn btn-secondary" (click)="deleteMasterClass(masterClass.id)">
+          Удалить
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="masterClasses.length === 0" class="no-items">
+      <p>Пока нет мастер-классов</p>
+    </div>
+  </div>
+</div>

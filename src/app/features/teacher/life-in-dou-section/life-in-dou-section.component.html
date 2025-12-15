@@ -1,0 +1,36 @@
+<div class="life-in-dou-section">
+  <div *ngIf="isEditMode" class="section-actions">
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      {{ showForm ? 'Отменить' : 'Добавить элемент' }}
+    </button>
+  </div>
+
+  <form *ngIf="showForm && isEditMode" class="item-form card" (ngSubmit)="createItem()">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-control" [(ngModel)]="newItem.title" name="title" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <textarea class="form-control" [(ngModel)]="newItem.description" name="description" rows="5"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+
+  <div class="items-list">
+    <div *ngFor="let item of lifeInDOU" class="item-card card">
+      <h3>{{ item.title }}</h3>
+      <p *ngIf="item.description">{{ item.description }}</p>
+      <div *ngIf="item.photos && item.photos.length > 0" class="photos">
+        <img *ngFor="let photo of item.photos" [src]="photo" alt="Photo" />
+      </div>
+      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deleteItem(item.id)">
+        Удалить
+      </button>
+    </div>
+
+    <div *ngIf="lifeInDOU.length === 0" class="no-items">
+      <p>Пока нет элементов</p>
+    </div>
+  </div>
+</div>

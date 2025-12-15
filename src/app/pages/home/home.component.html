@@ -1,0 +1,95 @@
+<div class="home-container">
+  <div class="header">
+    <div class="logo">
+      <i class="fas fa-graduation-cap"></i>
+      <h1>Педагогический Портал</h1>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="auth-section">
+      <div class="auth-tabs">
+        <button class="tab-btn" [class.active]="activeTab === 'login'" (click)="switchTab('login')">
+          Вход
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'register'" (click)="switchTab('register')">
+          Регистрация
+        </button>
+      </div>
+
+      <div class="auth-form">
+        <div *ngIf="error" class="error-message">
+          {{ error }}
+        </div>
+
+        <!-- Login Form -->
+        <form *ngIf="activeTab === 'login'" (ngSubmit)="onLogin()">
+          <div class="form-group">
+            <label class="form-label">Email или Username</label>
+            <input type="text" class="form-control" [(ngModel)]="loginData.email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Пароль</label>
+            <input type="password" class="form-control" [(ngModel)]="loginData.password" name="password" required />
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            {{ loading ? 'Вход...' : 'Войти' }}
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form *ngIf="activeTab === 'register'" (ngSubmit)="onRegister()">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="registerData.email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username (латинскими буквами)</label>
+            <input type="text" class="form-control" [(ngModel)]="registerData.username" name="username"
+              pattern="[a-zA-Z0-9_]+" required />
+            <small>Только латинские буквы, цифры и подчеркивания</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Имя</label>
+            <input type="text" class="form-control" [(ngModel)]="registerData.firstName" name="firstName" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Фамилия</label>
+            <input type="text" class="form-control" [(ngModel)]="registerData.lastName" name="lastName" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Пароль</label>
+            <input type="password" class="form-control" [(ngModel)]="registerData.password" name="password" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Подтвердите пароль</label>
+            <input type="password" class="form-control" [(ngModel)]="registerData.confirmPassword"
+              name="confirmPassword" required />
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            {{ loading ? 'Регистрация...' : 'Зарегистрироваться' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="teachers-section">
+      <h2>Наши преподаватели</h2>
+      <div class="teachers-grid">
+        <div *ngFor="let teacher of teachers" class="teacher-card" [routerLink]="['/teacher', teacher.user?.username]">
+          <div class="teacher-photo">
+            <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
+              [alt]="teacher.firstName + ' ' + teacher.lastName" />
+          </div>
+          <div class="teacher-info">
+            <h3>{{ teacher.firstName }} {{ teacher.lastName }}</h3>
+            <p *ngIf="teacher.bio">{{ teacher.bio | slice:0:100 }}...</p>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="teachers.length === 0" class="no-teachers">
+        <p>Пока нет зарегистрированных преподавателей</p>
+      </div>
+    </div>
+  </div>
+</div>

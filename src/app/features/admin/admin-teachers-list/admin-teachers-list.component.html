@@ -1,0 +1,18 @@
+<div class="admin-teachers-list">
+  <h2>Список преподавателей</h2>
+  <div class="teachers-table">
+    <div *ngFor="let teacher of teachers" class="teacher-row card">
+      <div class="teacher-info">
+        <img [src]="teacher.photoUrl || '/assets/default-avatar.png'" [alt]="teacher.firstName + ' ' + teacher.lastName"
+          class="teacher-avatar" />
+        <div>
+          <h3>{{ teacher.firstName }} {{ teacher.lastName }}</h3>
+          <p>{{ teacher.user?.email }}</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="editTeacher(teacher.id)">
+        Редактировать
+      </button>
+    </div>
+  </div>
+</div>

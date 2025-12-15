@@ -1,0 +1,28 @@
+.life-in-dou-section {
+  padding: 2rem 0;
+}
+
+.items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.item-card {
+  h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-orange);
+  }
+
+  .photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+
+    img {
+      width: 100%;
+      border-radius: 8px;
+    }
+  }
+}

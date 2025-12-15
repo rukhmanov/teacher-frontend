@@ -1,0 +1,40 @@
+<div class="presentations-section">
+  <div *ngIf="isEditMode" class="section-actions">
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      {{ showForm ? 'Отменить' : 'Добавить презентацию' }}
+    </button>
+  </div>
+
+  <form *ngIf="showForm && isEditMode" class="presentation-form card" (ngSubmit)="createPresentation()">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-control" [(ngModel)]="newPresentation.title" name="title" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <textarea class="form-control" [(ngModel)]="newPresentation.description" name="description"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL файла</label>
+      <input type="url" class="form-control" [(ngModel)]="newPresentation.fileUrl" name="fileUrl" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+
+  <div class="presentations-list">
+    <div *ngFor="let presentation of presentations" class="presentation-card card">
+      <h3>{{ presentation.title }}</h3>
+      <p *ngIf="presentation.description">{{ presentation.description }}</p>
+      <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
+        Скачать
+      </a>
+      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
+        Удалить
+      </button>
+    </div>
+
+    <div *ngIf="presentations.length === 0" class="no-items">
+      <p>Пока нет презентаций</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<div class="parent-section">
+  <div *ngIf="isEditMode" class="section-actions">
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      {{ showForm ? 'Отменить' : 'Добавить раздел' }}
+    </button>
+  </div>
+
+  <form *ngIf="showForm && isEditMode" class="section-form card" (ngSubmit)="createSection()">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-control" [(ngModel)]="newSection.title" name="title" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Содержание</label>
+      <textarea class="form-control" [(ngModel)]="newSection.content" name="content" rows="10"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+
+  <div class="sections-list">
+    <div *ngFor="let section of sections" class="section-card card">
+      <h3>{{ section.title }}</h3>
+      <div [innerHTML]="section.content"></div>
+      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deleteSection(section.id)">
+        Удалить
+      </button>
+    </div>
+
+    <div *ngIf="sections.length === 0" class="no-items">
+      <p>Пока нет разделов</p>
+    </div>
+  </div>
+</div>

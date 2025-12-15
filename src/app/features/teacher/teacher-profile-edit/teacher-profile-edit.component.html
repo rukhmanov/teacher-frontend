@@ -1,0 +1,94 @@
+<app-header></app-header>
+
+<div class="profile-edit-container" *ngIf="profile">
+  <div class="container">
+    <h1>Редактирование профиля</h1>
+
+    <nav class="edit-nav">
+      <button class="nav-btn" [class.active]="activeSection === 'profile'" (click)="activeSection = 'profile'">
+        Профиль
+      </button>
+      <button class="nav-btn" [class.active]="activeSection === 'social'" (click)="activeSection = 'social'">
+        Социальные сети
+      </button>
+      <button class="nav-btn" [class.active]="activeSection === 'location'" (click)="activeSection = 'location'">
+        Местоположение
+      </button>
+    </nav>
+
+    <!-- Profile Section -->
+    <div *ngIf="activeSection === 'profile'" class="edit-section card">
+      <h2>Основная информация</h2>
+      <form (ngSubmit)="updateProfile()">
+        <div class="form-group">
+          <label class="form-label">Фото</label>
+          <div class="photo-upload">
+            <img [src]="profile.photoUrl || '/assets/default-avatar.png'" alt="Profile photo"
+              class="profile-photo-preview" />
+            <input type="file" accept="image/*" (change)="onPhotoUpload($event)" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Имя</label>
+          <input type="text" class="form-control" [(ngModel)]="profile.firstName" name="firstName" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Фамилия</label>
+          <input type="text" class="form-control" [(ngModel)]="profile.lastName" name="lastName" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">О себе</label>
+          <textarea class="form-control" [(ngModel)]="profile.bio" name="bio" rows="5"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </form>
+    </div>
+
+    <!-- Social Links Section -->
+    <div *ngIf="activeSection === 'social'" class="edit-section card">
+      <h2>Социальные сети</h2>
+      <form (ngSubmit)="addSocialLink()" class="add-link-form">
+        <div class="form-group">
+          <label class="form-label">Платформа</label>
+          <select class="form-control" [(ngModel)]="newSocialLink.platform" name="platform">
+            <option *ngFor="let platform of socialPlatforms" [value]="platform">
+              {{ platform }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL</label>
+          <input type="url" class="form-control" [(ngModel)]="newSocialLink.url" name="url" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Добавить</button>
+      </form>
+
+      <div class="social-links-list">
+        <div *ngFor="let link of socialLinks" class="social-link-item">
+          <span class="platform">{{ link.platform }}</span>
+          <a [href]="link.url" target="_blank">{{ link.url }}</a>
+          <button class="btn btn-secondary" (click)="deleteSocialLink(link.id)">
+            Удалить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Section -->
+    <div *ngIf="activeSection === 'location'" class="edit-section card">
+      <h2>Местоположение</h2>
+      <form (ngSubmit)="updateProfile()">
+        <div class="form-group">
+          <label class="form-label">Адрес</label>
+          <input type="text" class="form-control" [(ngModel)]="profile.location" name="location"
+            placeholder="Введите адрес" />
+        </div>
+        <div class="map-placeholder">
+          <p>Карта будет отображаться здесь после указания адреса</p>
+          <small>Для интеграции Яндекс карт нужен API ключ</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </form>
+    </div>
+  </div>
+</div>

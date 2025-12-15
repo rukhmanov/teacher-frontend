@@ -1,0 +1,46 @@
+<app-header></app-header>
+
+<div class="teacher-profile-container" *ngIf="teacher">
+  <div class="profile-header">
+    <div class="container">
+      <div class="profile-info">
+        <div class="profile-photo">
+          <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
+            [alt]="teacher.firstName + ' ' + teacher.lastName" />
+        </div>
+        <div class="profile-details">
+          <h1>{{ teacher.firstName }} {{ teacher.lastName }}</h1>
+          <p *ngIf="teacher.bio" class="bio">{{ teacher.bio }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <nav class="profile-nav">
+      <a [routerLink]="['/teacher', username, 'home']" routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }">
+        Главная
+      </a>
+      <a [routerLink]="['/teacher', username, 'master-classes']" routerLinkActive="active">
+        Мастер-классы
+      </a>
+      <a [routerLink]="['/teacher', username, 'presentations']" routerLinkActive="active">
+        Презентации
+      </a>
+      <a [routerLink]="['/teacher', username, 'parents']" routerLinkActive="active">
+        Для родителей
+      </a>
+      <a [routerLink]="['/teacher', username, 'life']" routerLinkActive="active">
+        Жизнь в ДОУ
+      </a>
+      <a [routerLink]="['/teacher', username, 'contact']" routerLinkActive="active">
+        Связь со мной
+      </a>
+    </nav>
+
+    <div class="profile-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
