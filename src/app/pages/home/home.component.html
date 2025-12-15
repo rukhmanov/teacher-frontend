@@ -78,8 +78,8 @@
       <div class="teachers-grid">
         <div *ngFor="let teacher of teachers" class="teacher-card" [routerLink]="['/teacher', teacher.user?.username]">
           <div class="teacher-photo">
-            <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
-              [alt]="teacher.firstName + ' ' + teacher.lastName" />
+            <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
+              [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event)" />
           </div>
           <div class="teacher-info">
             <h3>{{ teacher.firstName }} {{ teacher.lastName }}</h3>

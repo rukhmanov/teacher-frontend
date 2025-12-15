@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { TeacherProfile } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-admin-teachers-list',
@@ -13,6 +14,7 @@ import { TeacherProfile } from '../../../core/models/teacher.interface';
 })
 export class AdminTeachersListComponent implements OnInit {
   teachers: TeacherProfile[] = [];
+  placeholder = PlaceholderUtil;
 
   constructor(
     private adminService: AdminService,
@@ -33,5 +35,12 @@ export class AdminTeachersListComponent implements OnInit {
 
   editTeacher(id: string) {
     this.router.navigate(['/admin/teachers', id, 'edit']);
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.src = this.placeholder.getAvatarPlaceholder();
+    }
   }
 }

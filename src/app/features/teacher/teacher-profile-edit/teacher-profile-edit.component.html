@@ -23,8 +23,8 @@
         <div class="form-group">
           <label class="form-label">Фото</label>
           <div class="photo-upload">
-            <img [src]="profile.photoUrl || '/assets/default-avatar.png'" alt="Profile photo"
-              class="profile-photo-preview" />
+            <img [src]="placeholder.getImageUrl(profile.photoUrl, 'avatar')" alt="Profile photo"
+              class="profile-photo-preview" (error)="onImageError($event)" />
             <input type="file" accept="image/*" (change)="onPhotoUpload($event)" />
           </div>
         </div>
@@ -52,20 +52,24 @@
           <label class="form-label">Платформа</label>
           <select class="form-control" [(ngModel)]="newSocialLink.platform" name="platform">
             <option *ngFor="let platform of socialPlatforms" [value]="platform">
-              {{ platform }}
+              {{ getPlatformName(platform) }}
             </option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">URL</label>
-          <input type="url" class="form-control" [(ngModel)]="newSocialLink.url" name="url" required />
+          <input type="text" class="form-control" [(ngModel)]="newSocialLink.url" name="url" required
+            [placeholder]="newSocialLink.platform === 'TELEGRAM' ? 'AleksRukhman или @AleksRukhman' : 'https://example.com'" />
+          <small *ngIf="newSocialLink.platform === 'TELEGRAM'" class="form-hint">
+            Можно ввести просто username (например: AleksRukhman или &#64;AleksRukhman)
+          </small>
         </div>
         <button type="submit" class="btn btn-primary">Добавить</button>
       </form>
 
       <div class="social-links-list">
         <div *ngFor="let link of socialLinks" class="social-link-item">
-          <span class="platform">{{ link.platform }}</span>
+          <span class="platform">{{ getPlatformName(link.platform) }}</span>
           <a [href]="link.url" target="_blank">{{ link.url }}</a>
           <button class="btn btn-secondary" (click)="deleteSocialLink(link.id)">
             Удалить
@@ -83,9 +87,14 @@
           <input type="text" class="form-control" [(ngModel)]="profile.location" name="location"
             placeholder="Введите адрес" />
         </div>
-        <div class="map-placeholder">
-          <p>Карта будет отображаться здесь после указания адреса</p>
-          <small>Для интеграции Яндекс карт нужен API ключ</small>
+        <div *ngIf="profile && profile.location" class="map-preview">
+          <app-yandex-map [address]="profile.location" [latitude]="profile.latitude" [longitude]="profile.longitude"
+            [editable]="true" [onLocationSelect]="onMapLocationSelect">
+          </app-yandex-map>
+          <small class="map-hint">Кликните на карте, чтобы выбрать точное местоположение</small>
+        </div>
+        <div *ngIf="!profile?.location" class="map-placeholder">
+          <p>Введите адрес, чтобы увидеть карту</p>
         </div>
         <button type="submit" class="btn btn-primary">Сохранить</button>
       </form>

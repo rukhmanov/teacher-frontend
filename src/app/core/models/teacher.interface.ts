@@ -3,10 +3,8 @@ import { User } from './user.interface';
 export enum SocialPlatform {
   VK = 'VK',
   TELEGRAM = 'TELEGRAM',
-  INSTAGRAM = 'INSTAGRAM',
-  FACEBOOK = 'FACEBOOK',
-  YOUTUBE = 'YOUTUBE',
-  CUSTOM = 'CUSTOM',
+  WEBSITE = 'WEBSITE',
+  MESSENGER_MAX = 'MESSENGER_MAX',
 }
 
 export interface TeacherProfile {

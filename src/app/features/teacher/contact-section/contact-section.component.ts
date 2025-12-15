@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { TeacherProfile, SocialLink, SocialPlatform } from '../../../core/models/teacher.interface';
+import { YandexMapComponent } from '../../../shared/components/yandex-map/yandex-map.component';
 
 @Component({
   selector: 'app-contact-section',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, YandexMapComponent],
   templateUrl: './contact-section.component.html',
   styleUrl: './contact-section.component.scss',
 })
@@ -74,11 +75,40 @@ export class ContactSectionComponent implements OnInit {
     const icons: Record<SocialPlatform, string> = {
       [SocialPlatform.VK]: 'fab fa-vk',
       [SocialPlatform.TELEGRAM]: 'fab fa-telegram',
-      [SocialPlatform.INSTAGRAM]: 'fab fa-instagram',
-      [SocialPlatform.FACEBOOK]: 'fab fa-facebook',
-      [SocialPlatform.YOUTUBE]: 'fab fa-youtube',
-      [SocialPlatform.CUSTOM]: 'fas fa-link',
+      [SocialPlatform.WEBSITE]: 'fas fa-globe',
+      [SocialPlatform.MESSENGER_MAX]: 'fab fa-facebook-messenger',
     };
     return icons[platform] || 'fas fa-link';
+  }
+
+  getPlatformName(platform: SocialPlatform): string {
+    const names: Record<SocialPlatform, string> = {
+      [SocialPlatform.VK]: 'ВКонтакте',
+      [SocialPlatform.TELEGRAM]: 'Telegram',
+      [SocialPlatform.WEBSITE]: 'Сайт',
+      [SocialPlatform.MESSENGER_MAX]: 'Messenger Max',
+    };
+    return names[platform] || platform;
+  }
+
+  getSocialLinkUrl(link: SocialLink): string {
+    if (link.platform === SocialPlatform.TELEGRAM) {
+      // Если это телеграм, форматируем URL
+      let url = link.url.trim();
+      
+      // Если URL не начинается с http/https, это username
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        // Убираем @ если есть
+        url = url.replace(/^@/, '');
+        // Формируем правильный URL
+        return `https://t.me/${url}`;
+      }
+      
+      // Если уже полный URL, возвращаем как есть
+      return url;
+    }
+    
+    // Для других платформ возвращаем URL как есть
+    return link.url;
   }
 }

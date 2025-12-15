@@ -5,8 +5,8 @@
     <div class="container">
       <div class="profile-info">
         <div class="profile-photo">
-          <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
-            [alt]="teacher.firstName + ' ' + teacher.lastName" />
+          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
+            [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event)" />
         </div>
         <div class="profile-details">
           <h1>{{ teacher.firstName }} {{ teacher.lastName }}</h1>

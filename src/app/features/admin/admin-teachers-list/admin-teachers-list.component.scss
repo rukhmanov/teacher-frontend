@@ -27,6 +27,8 @@
     height: 60px;
     border-radius: 50%;
     object-fit: cover;
+    display: block;
+    flex-shrink: 0;
   }
 
   h3 {

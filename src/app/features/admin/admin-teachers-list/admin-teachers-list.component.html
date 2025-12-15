@@ -3,8 +3,8 @@
   <div class="teachers-table">
     <div *ngFor="let teacher of teachers" class="teacher-row card">
       <div class="teacher-info">
-        <img [src]="teacher.photoUrl || '/assets/default-avatar.png'" [alt]="teacher.firstName + ' ' + teacher.lastName"
-          class="teacher-avatar" />
+        <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
+          [alt]="teacher.firstName + ' ' + teacher.lastName" class="teacher-avatar" (error)="onImageError($event)" />
         <div>
           <h3>{{ teacher.firstName }} {{ teacher.lastName }}</h3>
           <p>{{ teacher.user?.email }}</p>

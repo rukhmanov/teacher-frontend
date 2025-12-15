@@ -22,7 +22,8 @@
       <h3>{{ item.title }}</h3>
       <p *ngIf="item.description">{{ item.description }}</p>
       <div *ngIf="item.photos && item.photos.length > 0" class="photos">
-        <img *ngFor="let photo of item.photos" [src]="photo" alt="Photo" />
+        <img *ngFor="let photo of item.photos" [src]="placeholder.getImageUrl(photo, 'gallery')" alt="Photo"
+          (error)="onImageError($event)" />
       </div>
       <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deleteItem(item.id)">
         Удалить

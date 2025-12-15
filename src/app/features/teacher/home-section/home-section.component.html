@@ -3,8 +3,8 @@
     <aside class="sidebar" *ngIf="teacher || isEditMode">
       <div class="sidebar-card">
         <div class="sidebar-photo" *ngIf="teacher">
-          <img [src]="teacher.photoUrl || '/assets/default-avatar.png'"
-            [alt]="teacher.firstName + ' ' + teacher.lastName" />
+          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
+            [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event, 'avatar')" />
         </div>
         <h3 *ngIf="teacher">{{ teacher.firstName }} {{ teacher.lastName }}</h3>
         <p *ngIf="teacher?.bio" class="sidebar-bio">{{ teacher?.bio }}</p>
@@ -41,7 +41,8 @@
           <div class="post-content">
             <p>{{ post.content }}</p>
             <div *ngIf="post.images && post.images.length > 0" class="post-images">
-              <img *ngFor="let image of post.images" [src]="image" alt="Post image" />
+              <img *ngFor="let image of post.images" [src]="placeholder.getImageUrl(image, 'post')" alt="Post image"
+                (error)="onImageError($event, 'post')" />
             </div>
           </div>
           <div *ngIf="isEditMode" class="post-actions">

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { TeachersService } from '../../core/services/teachers.service';
 import { TeacherProfile } from '../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../core/utils/placeholder.util';
 import { RegisterFormData } from '../../core/models/user.interface';
 
 @Component({
@@ -17,6 +18,7 @@ import { RegisterFormData } from '../../core/models/user.interface';
 export class HomeComponent implements OnInit {
   teachers: TeacherProfile[] = [];
   activeTab: 'login' | 'register' = 'login';
+  placeholder = PlaceholderUtil;
   
   loginData = {
     email: '',
@@ -116,5 +118,12 @@ export class HomeComponent implements OnInit {
   switchTab(tab: 'login' | 'register') {
     this.activeTab = tab;
     this.error = '';
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.src = this.placeholder.getAvatarPlaceholder();
+    }
   }
 }

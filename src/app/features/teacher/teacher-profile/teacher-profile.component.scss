@@ -23,11 +23,16 @@
   overflow: hidden;
   border: 4px solid var(--white);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-beige) 100%);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
 }
 

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { MasterClass } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-master-classes-section',
@@ -23,6 +24,7 @@ export class MasterClassesSectionComponent implements OnInit {
     description: '',
     content: '',
   };
+  placeholder = PlaceholderUtil;
 
   constructor(
     private route: ActivatedRoute,

@@ -1,27 +1,38 @@
 <header class="header">
   <div class="container">
     <div class="header-content">
-      <a routerLink="/" class="logo">
-        <i class="fas fa-graduation-cap"></i>
-        <span>Педагогический Портал</span>
-      </a>
-
-      <nav class="nav" [class.menu-open]="isMenuOpen">
-        <a routerLink="/" routerLinkActive="active">Главная</a>
-        <ng-container *ngIf="currentUser">
-          <a *ngIf="currentUser.role === 'TEACHER'" [routerLink]="['/me/profile']" routerLinkActive="active">
-            Мой профиль
-          </a>
-          <a *ngIf="currentUser.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active">
-            Админ панель
-          </a>
+      <!-- Упрощенный хедер для страницы педагога -->
+      <ng-container *ngIf="isTeacherPage && currentUser">
+        <div class="teacher-header">
+          <span class="username">{{ currentUser.username }}</span>
           <button class="btn-logout" (click)="logout()">Выйти</button>
-        </ng-container>
-      </nav>
+        </div>
+      </ng-container>
 
-      <button class="menu-toggle" (click)="toggleMenu()">
-        <i class="fas fa-bars"></i>
-      </button>
+      <!-- Полный хедер для остальных страниц -->
+      <ng-container *ngIf="!isTeacherPage || !currentUser">
+        <a routerLink="/" class="logo">
+          <i class="fas fa-graduation-cap"></i>
+          <span>Педагогический Портал</span>
+        </a>
+
+        <nav class="nav" [class.menu-open]="isMenuOpen">
+          <a routerLink="/" routerLinkActive="active">Главная</a>
+          <ng-container *ngIf="currentUser">
+            <a *ngIf="currentUser.role === 'TEACHER'" [routerLink]="['/me/profile']" routerLinkActive="active">
+              Мой профиль
+            </a>
+            <a *ngIf="currentUser.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active">
+              Админ панель
+            </a>
+            <button class="btn-logout" (click)="logout()">Выйти</button>
+          </ng-container>
+        </nav>
+
+        <button class="menu-toggle" (click)="toggleMenu()">
+          <i class="fas fa-bars"></i>
+        </button>
+      </ng-container>
     </div>
   </div>
 </header>

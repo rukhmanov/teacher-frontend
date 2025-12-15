@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { LifeInDOU } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-life-in-dou-section',
@@ -18,6 +19,7 @@ export class LifeInDOUSectionComponent implements OnInit {
   isEditMode = false;
   showForm = false;
   newItem: Partial<LifeInDOU> = { title: '', description: '' };
+  placeholder = PlaceholderUtil;
 
   constructor(
     private route: ActivatedRoute,
@@ -72,6 +74,13 @@ export class LifeInDOUSectionComponent implements OnInit {
           this.loadOwnLifeInDOU();
         },
       });
+    }
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.src = this.placeholder.getGalleryPlaceholder();
     }
   }
 }

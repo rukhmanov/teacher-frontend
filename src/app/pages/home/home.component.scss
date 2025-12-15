@@ -125,11 +125,15 @@
   overflow: hidden;
   margin-bottom: 1rem;
   background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-beige) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
 }
 

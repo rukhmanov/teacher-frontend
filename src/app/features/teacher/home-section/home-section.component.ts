@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Post, TeacherProfile } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-home-section',
@@ -25,6 +26,9 @@ export class HomeSectionComponent implements OnInit {
     images: [] as string[],
     videos: [] as string[],
   };
+  
+  // Утилита для заглушек
+  placeholder = PlaceholderUtil;
 
   constructor(
     private route: ActivatedRoute,
@@ -143,6 +147,25 @@ export class HomeSectionComponent implements OnInit {
           this.loadOwnPosts();
         },
       });
+    }
+  }
+
+  onImageError(event: Event, type: 'avatar' | 'post' | 'gallery' = 'avatar') {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      switch (type) {
+        case 'avatar':
+          img.src = this.placeholder.getAvatarPlaceholder();
+          break;
+        case 'post':
+          img.src = this.placeholder.getPostImagePlaceholder();
+          break;
+        case 'gallery':
+          img.src = this.placeholder.getGalleryPlaceholder();
+          break;
+        default:
+          img.src = this.placeholder.getAvatarPlaceholder();
+      }
     }
   }
 }
