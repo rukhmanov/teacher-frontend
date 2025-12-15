@@ -36,6 +36,10 @@ export class AdminWhitelistComponent implements OnInit {
           this.loadWhitelist();
           this.newEmail = '';
         },
+        error: (err) => {
+          console.error('Error adding email to whitelist:', err);
+          alert('Ошибка: ' + (err.error?.message || 'Не удалось добавить email'));
+        },
       });
     }
   }

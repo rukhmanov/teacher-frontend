@@ -34,16 +34,64 @@ export class HomeSectionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.params.subscribe((params) => {
-      this.username = params['username'];
-      if (this.username) {
-        this.loadPublicPosts();
-      } else {
+    // Проверяем, есть ли username в параметрах (публичная страница) или мы в режиме редактирования
+    // username находится в родительском роуте для публичных страниц
+    const getUsername = () => {
+      return this.route.parent?.snapshot?.params?.['username'] || 
+             this.route.snapshot?.params?.['username'] || 
+             '';
+    };
+    
+    this.username = getUsername();
+    
+    if (this.username) {
+      // Публичная страница - загружаем публичные данные
+      this.isEditMode = false;
+      this.loadPublicData();
+    } else {
+      // Страница редактирования - проверяем авторизацию
+      if (this.authService.isAuthenticated()) {
         this.isEditMode = true;
         this.loadOwnPosts();
         this.loadOwnProfile();
       }
+      // Если не авторизован, просто не загружаем данные (guard должен был перенаправить)
+    }
+    
+    // Подписываемся на изменения родительских параметров
+    this.route.parent?.params.subscribe((parentParams) => {
+      const newUsername = parentParams['username'] || '';
+      if (newUsername !== this.username) {
+        this.username = newUsername;
+        if (this.username) {
+          this.isEditMode = false;
+          this.loadPublicData();
+        }
+      }
     });
+  }
+
+  loadPublicData() {
+    if (this.username) {
+      // Загружаем профиль учителя для отображения информации
+      this.teachersService.getTeacherByUsername(this.username).subscribe({
+        next: (teacher) => {
+          this.teacher = teacher;
+        },
+        error: (err) => {
+          console.error('Error loading teacher:', err);
+        },
+      });
+      // Загружаем публичные посты
+      this.teachersService.getPosts(this.username).subscribe({
+        next: (posts) => {
+          this.posts = posts;
+        },
+        error: (err) => {
+          console.error('Error loading posts:', err);
+        },
+      });
+    }
   }
 
   loadPublicPosts() {
@@ -65,9 +113,15 @@ export class HomeSectionComponent implements OnInit {
   }
 
   loadOwnProfile() {
+    // Загружаем свой профиль только если авторизован
+    // Guard должен был проверить авторизацию перед загрузкой компонента
     this.teachersService.getOwnProfile().subscribe({
       next: (teacher) => {
         this.teacher = teacher;
+      },
+      error: (err) => {
+        console.error('Error loading own profile:', err);
+        // Interceptor обработает 401 ошибку
       },
     });
   }

@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { TeacherProfile, SocialLink, SocialPlatform } from '../../../core/models/teacher.interface';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 
@@ -28,25 +29,56 @@ export class TeacherProfileEditComponent implements OnInit {
     private teachersService: TeachersService,
     private uploadService: UploadService,
     private router: Router,
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
+    // Проверяем авторизацию перед загрузкой данных
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/']);
+      return;
+    }
     this.loadProfile();
     this.loadSocialLinks();
   }
 
   loadProfile() {
+    // Дополнительная проверка авторизации
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/']);
+      return;
+    }
+    
     this.teachersService.getOwnProfile().subscribe({
       next: (profile) => {
         this.profile = profile;
+      },
+      error: (err) => {
+        console.error('Error loading profile:', err);
+        if (err.status === 401) {
+          this.authService.logout();
+          this.router.navigate(['/']);
+        }
       },
     });
   }
 
   loadSocialLinks() {
+    // Дополнительная проверка авторизации
+    if (!this.authService.isAuthenticated()) {
+      return;
+    }
+    
     this.teachersService.getOwnSocialLinks().subscribe({
       next: (links) => {
         this.socialLinks = links;
+      },
+      error: (err) => {
+        console.error('Error loading social links:', err);
+        if (err.status === 401) {
+          this.authService.logout();
+          this.router.navigate(['/']);
+        }
       },
     });
   }

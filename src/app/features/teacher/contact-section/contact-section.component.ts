@@ -22,11 +22,13 @@ export class ContactSectionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.params.subscribe((params) => {
-      this.username = params['username'];
+    // username находится в родительском роуте для публичных страниц
+    this.route.parent?.params.subscribe((parentParams) => {
+      this.username = parentParams['username'];
       if (this.username) {
         this.loadPublicData();
       } else {
+        // Страница редактирования - загружаем свои данные (guard должен проверить авторизацию)
         this.loadOwnData();
       }
     });
@@ -48,14 +50,22 @@ export class ContactSectionComponent implements OnInit {
   }
 
   loadOwnData() {
+    // Загружаем свои данные только если авторизован
+    // Если не авторизован, не загружаем ничего (это должно быть защищено роутом)
     this.teachersService.getOwnProfile().subscribe({
       next: (teacher) => {
         this.teacher = teacher;
+      },
+      error: (err) => {
+        console.error('Error loading own profile:', err);
       },
     });
     this.teachersService.getOwnSocialLinks().subscribe({
       next: (links) => {
         this.socialLinks = links;
+      },
+      error: (err) => {
+        console.error('Error loading own social links:', err);
       },
     });
   }

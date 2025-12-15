@@ -25,8 +25,9 @@ export class LifeInDOUSectionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.params.subscribe((params) => {
-      this.username = params['username'];
+    // username находится в родительском роуте для публичных страниц
+    this.route.parent?.params.subscribe((parentParams) => {
+      this.username = parentParams['username'];
       if (this.username) {
         this.loadPublicLifeInDOU();
       } else {
