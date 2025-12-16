@@ -29,6 +29,10 @@ export class MasterClassesSectionComponent implements OnInit {
   };
   placeholder = PlaceholderUtil;
 
+  // Модальное окно
+  showModal: boolean = false;
+  selectedMasterClass: MasterClass | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -118,6 +122,29 @@ export class MasterClassesSectionComponent implements OnInit {
         },
       });
     }
+  }
+
+  getTruncatedContent(content: string | undefined): string {
+    if (!content) return '';
+    return content.length > 200 ? content.substring(0, 200) + '...' : content;
+  }
+
+  shouldShowFullButton(masterClass: MasterClass): boolean {
+    const hasLongContent = masterClass.content && masterClass.content.length > 200;
+    const hasDescription = masterClass.description && masterClass.description.length > 100;
+    return !!(hasLongContent || hasDescription);
+  }
+
+  openModal(masterClass: MasterClass): void {
+    this.selectedMasterClass = masterClass;
+    this.showModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.selectedMasterClass = null;
+    document.body.style.overflow = '';
   }
 }
 

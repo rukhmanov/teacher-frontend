@@ -26,6 +26,10 @@ export class PresentationsSectionComponent implements OnInit {
   isUploading = false;
   placeholder = PlaceholderUtil;
 
+  // Модальное окно
+  showModal: boolean = false;
+  selectedPresentation: Presentation | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -186,6 +190,27 @@ export class PresentationsSectionComponent implements OnInit {
         },
       });
     }
+  }
+
+  getTruncatedDescription(description: string | undefined): string {
+    if (!description) return '';
+    return description.length > 200 ? description.substring(0, 200) + '...' : description;
+  }
+
+  shouldShowFullButton(presentation: Presentation): boolean {
+    return !!(presentation.description && presentation.description.length > 200);
+  }
+
+  openModal(presentation: Presentation): void {
+    this.selectedPresentation = presentation;
+    this.showModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.selectedPresentation = null;
+    document.body.style.overflow = '';
   }
 }
 

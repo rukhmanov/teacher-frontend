@@ -155,6 +155,45 @@
   color: var(--text-brown);
 }
 
+.info-banner {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-orange);
+
+  .info-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    i {
+      font-size: 1.5rem;
+      color: var(--primary-orange);
+      flex-shrink: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-dark);
+      font-size: 1rem;
+      line-height: 1.6;
+
+      a {
+        color: var(--primary-orange);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: var(--primary-peach);
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 968px) {
   .main-content {
     grid-template-columns: 1fr;

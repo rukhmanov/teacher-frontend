@@ -32,8 +32,9 @@
     <div *ngFor="let mediaItem of getMediaItems()" class="masonry-item" [class.photo]="mediaItem.type === 'photo'"
       [class.video]="mediaItem.type === 'video'">
       <div class="media-wrapper">
-        <img *ngIf="mediaItem.type === 'photo'" [src]="placeholder.getImageUrl(mediaItem.url, 'gallery')" alt="Photo"
-          (error)="onImageError($event)" />
+        <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
+          (error)="onImageError($event)"
+          (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))" class="clickable-image" />
         <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"></video>
         <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
         <button *ngIf="isEditMode" class="btn-delete-media" (click)="deleteMedia(mediaItem.url)" title="Удалить">
@@ -51,4 +52,9 @@
       <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
     </div>
   </div>
+
+  <!-- Карусель изображений -->
+  <app-image-carousel *ngIf="showCarousel" [images]="carouselImages" [startIndex]="carouselStartIndex"
+    (close)="closeCarousel()">
+  </app-image-carousel>
 </div>

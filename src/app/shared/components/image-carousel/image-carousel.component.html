@@ -1,0 +1,30 @@
+<div class="carousel-overlay" (click)="onClose()">
+  <div class="carousel-container" (click)="$event.stopPropagation()" [class.fullscreen]="isFullscreen">
+    <button class="carousel-close" (click)="onClose()" aria-label="Закрыть">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <button class="carousel-nav carousel-prev" (click)="previous()" aria-label="Предыдущее изображение">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <div class="carousel-main">
+      <div class="carousel-counter-top">{{ currentIndex + 1 }} / {{ images.length }}</div>
+      <img [src]="images[currentIndex] || PlaceholderUtil.getPostImagePlaceholder()"
+        [alt]="'Изображение ' + (currentIndex + 1)" (error)="onImageError($event)" class="carousel-image" />
+
+    </div>
+
+    <button class="carousel-nav carousel-next" (click)="next()" aria-label="Следующее изображение">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <div class="carousel-thumbnails" *ngIf="images.length > 1">
+      <div *ngFor="let image of images; let i = index" class="thumbnail" [class.active]="i === currentIndex"
+        (click)="goToIndex(i)">
+        <img [src]="image || PlaceholderUtil.getPostImagePlaceholder()" [alt]="'Миниатюра ' + (i + 1)"
+          (error)="onImageError($event)" />
+      </div>
+    </div>
+  </div>
+</div>

@@ -205,20 +205,26 @@
 }
 
 .sections-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .section-card {
   transition: all 0.3s ease;
   border: 2px solid transparent;
   padding: 2rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+  max-height: 600px;
+  
   // Fallback background, если нет inline стилей
   background-color: var(--bg-cream);
   background-image: linear-gradient(135deg, var(--white) 0%, var(--bg-cream) 100%);
   border-radius: 16px;
-  position: relative;
   overflow: hidden;
   
   // Позволяем inline стилям переопределять background
@@ -265,6 +271,7 @@
     right: 0;
     height: 4px;
     background: linear-gradient(90deg, var(--primary-orange) 0%, #ff6b6b 100%);
+    z-index: 2;
   }
 
   &:hover {
@@ -277,20 +284,59 @@
     margin-bottom: 1rem;
     color: var(--primary-orange);
     font-size: 1.5rem;
+    flex-shrink: 0;
   }
 
-  .actions {
-    margin-top: 1.5rem;
+  .content {
+    flex: 1;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 8;
+    -webkit-box-orient: vertical;
+    line-height: 1.8;
+    color: var(--text-dark);
+  }
+
+  .card-footer {
+    margin-top: auto;
     padding-top: 1rem;
     border-top: 2px solid rgba(255, 107, 107, 0.1);
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    background: inherit;
+    position: relative;
+    z-index: 10;
+  }
+
+  .btn-expand {
+    background: transparent;
+    border: 1px solid var(--primary-orange);
+    color: var(--primary-orange);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: var(--primary-orange);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    i {
+      font-size: 0.85rem;
+    }
   }
 
   .section-actions-buttons {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 2px solid rgba(255, 107, 107, 0.1);
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
@@ -319,6 +365,187 @@
         min-width: 40px;
       }
     }
+  }
+}
+
+// Модальное окно
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 107, 107, 0.1);
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem;
+  padding-right: 4rem;
+  border-bottom: 2px solid rgba(255, 107, 107, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+
+  h2 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.8rem;
+    flex: 1;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+  z-index: 10001;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+  }
+}
+
+.modal-body {
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  .modal-text {
+    color: var(--text-dark);
+    line-height: 1.8;
+    font-size: 1.05rem;
+    flex: 1;
+
+    ::ng-deep {
+      p {
+        margin-bottom: 1rem;
+      }
+
+      ul, ol {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        color: var(--primary-orange);
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      strong {
+        color: var(--text-dark);
+        font-weight: 600;
+      }
+
+      em {
+        color: var(--text-brown);
+      }
+
+      a {
+        color: var(--primary-orange);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-bottom-color: var(--primary-orange);
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 1.5rem 3.5rem 1rem 1.5rem;
+    flex-direction: column;
+
+    h2 {
+      font-size: 1.4rem;
+    }
+
+    .modal-close {
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    gap: 1rem;
   }
 }
 

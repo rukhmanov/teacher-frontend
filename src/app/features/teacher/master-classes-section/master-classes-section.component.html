@@ -45,15 +45,20 @@
         {{ masterClass.description }}
       </p>
       <div *ngIf="masterClass.content" class="content">
-        <p [innerHTML]="masterClass.content"></p>
+        <div class="content-text" [innerHTML]="getTruncatedContent(masterClass.content)"></div>
       </div>
-      <div *ngIf="isEditMode" class="actions">
-        <button class="btn btn-primary" (click)="editMasterClass(masterClass)">
-          <i class="fas fa-edit"></i> <span>Редактировать</span>
+      <div class="card-footer">
+        <button *ngIf="shouldShowFullButton(masterClass)" class="btn-expand" (click)="openModal(masterClass)">
+          <i class="fas fa-expand"></i> Показать все
         </button>
-        <button class="btn btn-secondary" (click)="deleteMasterClass(masterClass.id)">
-          <i class="fas fa-trash"></i> <span>Удалить</span>
-        </button>
+        <div *ngIf="isEditMode" class="actions">
+          <button class="btn btn-primary" (click)="editMasterClass(masterClass)">
+            <i class="fas fa-edit"></i> <span>Редактировать</span>
+          </button>
+          <button class="btn btn-secondary" (click)="deleteMasterClass(masterClass.id)">
+            <i class="fas fa-trash"></i> <span>Удалить</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -66,6 +71,24 @@
         <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
           <i class="fas fa-plus"></i> Добавить мастер-класс
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для полного просмотра -->
+  <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()" *ngIf="selectedMasterClass">
+      <div class="modal-header">
+        <button class="modal-close" (click)="closeModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>{{ selectedMasterClass.title }}</h2>
+      </div>
+      <div class="modal-body">
+        <p *ngIf="selectedMasterClass.description" class="modal-description">
+          {{ selectedMasterClass.description }}
+        </p>
+        <div *ngIf="selectedMasterClass.content" class="modal-text" [innerHTML]="selectedMasterClass.content"></div>
       </div>
     </div>
   </div>

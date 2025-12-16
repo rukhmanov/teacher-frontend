@@ -129,6 +129,14 @@ export class TeacherProfileEditComponent implements OnInit {
     this.isAddressValid = isValid;
   }
 
+  clearLocation() {
+    if (this.profile) {
+      this.profile.location = '';
+      this.profile.latitude = undefined;
+      this.profile.longitude = undefined;
+      this.isAddressValid = false;
+    }
+  }
 
   private saveProfile() {
     if (this.profile) {

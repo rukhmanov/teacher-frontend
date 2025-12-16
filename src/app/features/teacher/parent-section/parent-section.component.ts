@@ -24,6 +24,10 @@ export class ParentSectionComponent implements OnInit {
   placeholder = PlaceholderUtil;
   isUploading = false;
 
+  // Модальное окно
+  showModal: boolean = false;
+  selectedSection: ParentSection | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -123,6 +127,31 @@ export class ParentSectionComponent implements OnInit {
         },
       });
     }
+  }
+
+  getTruncatedContent(content: string | undefined): string {
+    if (!content) return '';
+    // Убираем HTML теги для подсчета длины
+    const textContent = content.replace(/<[^>]*>/g, '');
+    return textContent.length > 200 ? textContent.substring(0, 200) + '...' : content;
+  }
+
+  shouldShowFullButton(section: ParentSection): boolean {
+    if (!section.content) return false;
+    const textContent = section.content.replace(/<[^>]*>/g, '');
+    return textContent.length > 200;
+  }
+
+  openModal(section: ParentSection): void {
+    this.selectedSection = section;
+    this.showModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.selectedSection = null;
+    document.body.style.overflow = '';
   }
 }
 

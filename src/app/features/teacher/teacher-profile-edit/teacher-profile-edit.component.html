@@ -133,7 +133,12 @@
               Начните вводить адрес, и вы увидите подсказки. Выберите нужный адрес из списка.
             </small>
           </div>
-          <button type="submit" class="btn btn-primary" [disabled]="!isAddressValid">Сохранить</button>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="clearLocation()" [disabled]="!profile.location">
+              <i class="fas fa-times"></i> Очистить
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!isAddressValid">Сохранить</button>
+          </div>
         </form>
       </div>
 

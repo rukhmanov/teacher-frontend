@@ -41,14 +41,19 @@
     <div *ngFor="let section of sections" class="section-card card"
       [style.background-color]="section.cardColor || null">
       <h3>{{ section.title }}</h3>
-      <div [innerHTML]="section.content"></div>
-      <div *ngIf="isEditMode" class="section-actions-buttons">
-        <button class="btn btn-primary" (click)="editSection(section)">
-          <i class="fas fa-edit"></i> <span>Редактировать</span>
+      <div class="content" [innerHTML]="getTruncatedContent(section.content)"></div>
+      <div class="card-footer">
+        <button *ngIf="shouldShowFullButton(section)" class="btn-expand" (click)="openModal(section)">
+          <i class="fas fa-expand"></i> Показать все
         </button>
-        <button class="btn btn-secondary" (click)="deleteSection(section.id)">
-          <i class="fas fa-trash"></i> <span>Удалить</span>
-        </button>
+        <div *ngIf="isEditMode" class="section-actions-buttons">
+          <button class="btn btn-primary" (click)="editSection(section)">
+            <i class="fas fa-edit"></i> <span>Редактировать</span>
+          </button>
+          <button class="btn btn-secondary" (click)="deleteSection(section.id)">
+            <i class="fas fa-trash"></i> <span>Удалить</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -61,6 +66,21 @@
         <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
           <i class="fas fa-plus"></i> Добавить раздел
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для полного просмотра -->
+  <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()" *ngIf="selectedSection">
+      <div class="modal-header">
+        <button class="modal-close" (click)="closeModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>{{ selectedSection.title }}</h2>
+      </div>
+      <div class="modal-body">
+        <div class="modal-text" [innerHTML]="selectedSection.content"></div>
       </div>
     </div>
   </div>

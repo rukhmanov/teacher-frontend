@@ -8,11 +8,12 @@ import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { LifeInDOU, MediaItem } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
+import { ImageCarouselComponent } from '../../../shared/components/image-carousel/image-carousel.component';
 
 @Component({
   selector: 'app-life-in-dou-section',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ImageCarouselComponent],
   templateUrl: './life-in-dou-section.component.html',
   styleUrl: './life-in-dou-section.component.scss',
 })
@@ -24,6 +25,11 @@ export class LifeInDOUSectionComponent implements OnInit {
   
   selectedFiles: File[] = [];
   isUploading = false;
+  
+  // Карусель изображений
+  showCarousel: boolean = false;
+  carouselImages: string[] = [];
+  carouselStartIndex: number = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -158,5 +164,27 @@ export class LifeInDOUSectionComponent implements OnInit {
         item.type &&
         !Array.isArray(item)
     ) as MediaItem[];
+  }
+
+  getPhotoUrls(): string[] {
+    return this.getMediaItems()
+      .filter(item => item.type === 'photo')
+      .map(item => item.url);
+  }
+
+  openImageCarousel(images: string[], startIndex: number = 0): void {
+    this.carouselImages = images;
+    this.carouselStartIndex = startIndex;
+    this.showCarousel = true;
+  }
+
+  closeCarousel(): void {
+    this.showCarousel = false;
+    this.carouselImages = [];
+    this.carouselStartIndex = 0;
+  }
+
+  getImageUrl(url: string | null | undefined): string {
+    return PlaceholderUtil.getImageUrl(url, 'gallery');
   }
 }

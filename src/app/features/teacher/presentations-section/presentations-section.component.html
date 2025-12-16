@@ -68,17 +68,22 @@
     <div *ngFor="let presentation of presentations" class="presentation-card card"
       [style.background-color]="presentation.cardColor || null">
       <h3>{{ presentation.title }}</h3>
-      <p *ngIf="presentation.description">{{ presentation.description }}</p>
-      <div class="presentation-actions">
-        <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
-          <i class="fas fa-download"></i> <span>Скачать</span>
-        </a>
-        <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPresentation(presentation)">
-          <i class="fas fa-edit"></i> <span>Редактировать</span>
+      <p *ngIf="presentation.description">{{ getTruncatedDescription(presentation.description) }}</p>
+      <div class="card-footer">
+        <button *ngIf="shouldShowFullButton(presentation)" class="btn-expand" (click)="openModal(presentation)">
+          <i class="fas fa-expand"></i> Показать все
         </button>
-        <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
-          <i class="fas fa-trash"></i> <span>Удалить</span>
-        </button>
+        <div class="presentation-actions">
+          <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i> <span>Скачать</span>
+          </a>
+          <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPresentation(presentation)">
+            <i class="fas fa-edit"></i> <span>Редактировать</span>
+          </button>
+          <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
+            <i class="fas fa-trash"></i> <span>Удалить</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -91,6 +96,28 @@
         <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
           <i class="fas fa-plus"></i> Добавить презентацию
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для полного просмотра -->
+  <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()" *ngIf="selectedPresentation">
+      <div class="modal-header">
+        <button class="modal-close" (click)="closeModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>{{ selectedPresentation.title }}</h2>
+      </div>
+      <div class="modal-body">
+        <p *ngIf="selectedPresentation.description" class="modal-text">
+          {{ selectedPresentation.description }}
+        </p>
+        <div class="modal-actions">
+          <a [href]="selectedPresentation.fileUrl" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i> Скачать презентацию
+          </a>
+        </div>
       </div>
     </div>
   </div>

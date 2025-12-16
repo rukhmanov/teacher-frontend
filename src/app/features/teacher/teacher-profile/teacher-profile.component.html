@@ -23,12 +23,6 @@
   </div>
 
   <div class="container">
-    <div class="profile-nav-wrapper">
-      <a routerLink="/" class="btn-link-to-list" title="Список всех педагогов">
-        <i class="fas fa-users"></i>
-        <span>Список педагогов</span>
-      </a>
-    </div>
     <nav class="profile-nav">
       <a [routerLink]="['/teacher', username, 'home']" routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }">

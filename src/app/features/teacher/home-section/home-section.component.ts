@@ -8,11 +8,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { Post, TeacherProfile } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
+import { ImageCarouselComponent } from '../../../shared/components/image-carousel/image-carousel.component';
 
 @Component({
   selector: 'app-home-section',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ImageCarouselComponent],
   templateUrl: './home-section.component.html',
   styleUrl: './home-section.component.scss',
 })
@@ -36,6 +37,15 @@ export class HomeSectionComponent implements OnInit {
 
   selectedImages: File[] = [];
   imagePreviews: string[] = [];
+  
+  // Карусель изображений
+  showCarousel: boolean = false;
+  carouselImages: string[] = [];
+  carouselStartIndex: number = 0;
+  
+  // Модальное окно поста
+  showPostModal: boolean = false;
+  selectedPost: Post | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -269,6 +279,48 @@ export class HomeSectionComponent implements OnInit {
           img.src = this.placeholder.getAvatarPlaceholder();
       }
     }
+  }
+
+  getTruncatedContent(content: string | undefined): string {
+    if (!content) return '';
+    const maxLength = 200;
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  }
+
+  shouldShowFullButton(post: Post): boolean {
+    // Показываем кнопку, если контент длинный или много изображений
+    const hasLongContent = !!(post.content && post.content.length > 200);
+    const hasManyImages = !!(post.images && post.images.length > 3);
+    return hasLongContent || hasManyImages;
+  }
+
+  openPostModal(post: Post): void {
+    this.selectedPost = post;
+    this.showPostModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closePostModal(): void {
+    this.showPostModal = false;
+    this.selectedPost = null;
+    document.body.style.overflow = '';
+  }
+
+  getImageUrl(url: string | null | undefined, type: 'avatar' | 'post' | 'gallery' = 'post'): string {
+    return PlaceholderUtil.getImageUrl(url, type);
+  }
+
+  openImageCarousel(images: string[], startIndex: number = 0): void {
+    this.carouselImages = images;
+    this.carouselStartIndex = startIndex;
+    this.showCarousel = true;
+  }
+
+  closeCarousel(): void {
+    this.showCarousel = false;
+    this.carouselImages = [];
+    this.carouselStartIndex = 0;
   }
 }
 

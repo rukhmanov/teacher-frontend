@@ -120,6 +120,15 @@
         display: block;
         border-radius: 12px;
         object-fit: cover;
+
+        &.clickable-image {
+          cursor: pointer;
+          transition: transform 0.3s ease;
+
+          &:hover {
+            transform: scale(1.05);
+          }
+        }
       }
 
       video {
