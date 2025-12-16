@@ -22,11 +22,14 @@ export class HomeSectionComponent implements OnInit {
   username: string = '';
   isEditMode = false;
   showPostForm = false;
+  editingPostId: string | null = null;
   newPost = {
     title: '',
     content: '',
     images: [] as string[],
     videos: [] as string[],
+    cardColor: '',
+    coverImage: '',
   };
   
   // Утилита для заглушек
@@ -158,7 +161,48 @@ export class HomeSectionComponent implements OnInit {
     this.imagePreviews.splice(index, 1);
   }
 
+  selectedCoverImage: File | null = null;
+  coverImagePreview: string | null = null;
+
+  onCoverImageSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedCoverImage = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          this.coverImagePreview = e.target.result as string;
+        }
+      };
+      reader.readAsDataURL(this.selectedCoverImage);
+    }
+  }
+
+  removeCoverImage() {
+    this.selectedCoverImage = null;
+    this.coverImagePreview = null;
+    this.newPost.coverImage = '';
+  }
+
   createPost() {
+    // Сначала загружаем заставку, если выбрана
+    if (this.selectedCoverImage) {
+      this.uploadService.uploadImage(this.selectedCoverImage).subscribe({
+        next: (response) => {
+          this.newPost.coverImage = response.url;
+          this.continuePostCreation();
+        },
+        error: (err) => {
+          console.error('Error uploading cover image:', err);
+          this.continuePostCreation();
+        },
+      });
+    } else {
+      this.continuePostCreation();
+    }
+  }
+
+  private continuePostCreation() {
     if (this.selectedImages.length > 0) {
       // Загружаем изображения
       const uploadObservables = this.selectedImages.map(file => 
@@ -168,7 +212,9 @@ export class HomeSectionComponent implements OnInit {
       // Используем forkJoin для параллельной загрузки
       forkJoin(uploadObservables).subscribe({
         next: (results) => {
-          this.newPost.images = results.map(r => r.url);
+          // Добавляем новые изображения к существующим (если редактируем)
+          const newImageUrls = results.map(r => r.url);
+          this.newPost.images = [...(this.newPost.images || []), ...newImageUrls];
           this.submitPost();
         },
         error: (err) => {
@@ -182,18 +228,56 @@ export class HomeSectionComponent implements OnInit {
   }
 
   private submitPost() {
-    this.teachersService.createPost(this.newPost).subscribe({
-      next: () => {
-        this.loadOwnPosts();
-        this.showPostForm = false;
-        this.newPost = { title: '', content: '', images: [], videos: [] };
-        this.selectedImages = [];
-        this.imagePreviews = [];
-      },
-      error: (err) => {
-        console.error('Error creating post:', err);
-      },
-    });
+    if (this.editingPostId) {
+      // Обновляем существующий пост
+      this.teachersService.updatePost(this.editingPostId, this.newPost).subscribe({
+        next: () => {
+          this.loadOwnPosts();
+          this.cancelEdit();
+        },
+        error: (err) => {
+          console.error('Error updating post:', err);
+        },
+      });
+    } else {
+      // Создаем новый пост
+      this.teachersService.createPost(this.newPost).subscribe({
+        next: () => {
+          this.loadOwnPosts();
+          this.cancelEdit();
+        },
+        error: (err) => {
+          console.error('Error creating post:', err);
+        },
+      });
+    }
+  }
+
+  editPost(post: Post) {
+    this.editingPostId = post.id;
+    this.newPost = {
+      title: post.title,
+      content: post.content,
+      images: [...(post.images || [])],
+      videos: [...(post.videos || [])],
+      cardColor: post.cardColor || '',
+      coverImage: post.coverImage || '',
+    };
+    this.selectedImages = [];
+    this.imagePreviews = [];
+    this.selectedCoverImage = null;
+    this.coverImagePreview = post.coverImage ? this.placeholder.getImageUrl(post.coverImage, 'post') : null;
+    this.showPostForm = true;
+  }
+
+  cancelEdit() {
+    this.showPostForm = false;
+    this.editingPostId = null;
+    this.newPost = { title: '', content: '', images: [], videos: [], cardColor: '', coverImage: '' };
+    this.selectedImages = [];
+    this.imagePreviews = [];
+    this.selectedCoverImage = null;
+    this.coverImagePreview = null;
   }
 
   deletePost(id: string) {

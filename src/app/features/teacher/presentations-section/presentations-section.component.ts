@@ -18,6 +18,7 @@ export class PresentationsSectionComponent implements OnInit {
   username: string = '';
   isEditMode = false;
   showForm = false;
+  editingPresentationId: string | null = null;
   newPresentation: Partial<Presentation> = { title: '', description: '', fileUrl: '' };
   selectedFile: File | null = null;
   useFileUpload = false;
@@ -111,19 +112,51 @@ export class PresentationsSectionComponent implements OnInit {
   }
 
   private createPresentationWithUrl() {
-    this.teachersService.createPresentation(this.newPresentation as any).subscribe({
-      next: () => {
-        this.loadOwnPresentations();
-        this.showForm = false;
-        this.resetForm();
-      },
-      error: () => {
-        this.isUploading = false;
-      },
-      complete: () => {
-        this.isUploading = false;
-      },
-    });
+    if (this.editingPresentationId) {
+      this.teachersService.updatePresentation(this.editingPresentationId, this.newPresentation as any).subscribe({
+        next: () => {
+          this.loadOwnPresentations();
+          this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
+        },
+        complete: () => {
+          this.isUploading = false;
+        },
+      });
+    } else {
+      this.teachersService.createPresentation(this.newPresentation as any).subscribe({
+        next: () => {
+          this.loadOwnPresentations();
+          this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
+        },
+        complete: () => {
+          this.isUploading = false;
+        },
+      });
+    }
+  }
+
+  editPresentation(presentation: Presentation) {
+    this.editingPresentationId = presentation.id;
+    this.newPresentation = {
+      title: presentation.title,
+      description: presentation.description,
+      fileUrl: presentation.fileUrl,
+    };
+    this.selectedFile = null;
+    this.useFileUpload = false;
+    this.showForm = true;
+  }
+
+  cancelEdit() {
+    this.showForm = false;
+    this.editingPresentationId = null;
+    this.resetForm();
   }
 
   private resetForm() {

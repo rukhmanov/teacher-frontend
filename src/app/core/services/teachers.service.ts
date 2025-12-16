@@ -204,34 +204,24 @@ export class TeachersService {
   }
 
   // Life in DOU
-  getLifeInDOU(username: string): Observable<LifeInDOU[]>;
-  getLifeInDOU(teacherId?: string): Observable<LifeInDOU[]>;
-  getLifeInDOU(usernameOrTeacherId?: string): Observable<LifeInDOU[]> {
-    if (usernameOrTeacherId) {
-      return this.http.get<LifeInDOU[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/life`,
-      );
-    }
-    return this.http.get<LifeInDOU[]>(`${this.apiUrl}/teachers/me/life`);
-  }
-
-  getOwnLifeInDOU(): Observable<LifeInDOU[]> {
-    return this.http.get<LifeInDOU[]>(`${this.apiUrl}/teachers/me/life`);
-  }
-
-  createLifeInDOU(data: Partial<LifeInDOU>): Observable<LifeInDOU> {
-    return this.http.post<LifeInDOU>(`${this.apiUrl}/teachers/me/life`, data);
-  }
-
-  updateLifeInDOU(id: string, data: Partial<LifeInDOU>): Observable<LifeInDOU> {
-    return this.http.put<LifeInDOU>(
-      `${this.apiUrl}/teachers/me/life/${id}`,
-      data,
+  getLifeInDOU(username: string): Observable<LifeInDOU> {
+    return this.http.get<LifeInDOU>(
+      `${this.apiUrl}/teachers/${username}/life`,
     );
   }
 
-  deleteLifeInDOU(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/teachers/me/life/${id}`);
+  getOwnLifeInDOU(): Observable<LifeInDOU> {
+    return this.http.get<LifeInDOU>(`${this.apiUrl}/teachers/me/life`);
+  }
+
+  addMediaToLifeInDOU(mediaItem: { type: 'photo' | 'video'; url: string; caption?: string }): Observable<LifeInDOU> {
+    return this.http.post<LifeInDOU>(`${this.apiUrl}/teachers/me/life/media`, mediaItem);
+  }
+
+  removeMediaFromLifeInDOU(url: string): Observable<LifeInDOU> {
+    return this.http.request<LifeInDOU>('DELETE', `${this.apiUrl}/teachers/me/life/media`, {
+      body: { url },
+    });
   }
 
   // Social Links

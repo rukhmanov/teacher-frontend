@@ -1,8 +1,9 @@
 <div class="presentations-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn-create" (click)="showForm = !showForm">
-      <i class="fas fa-file-powerpoint"></i>
-      <span>{{ showForm ? 'Отменить' : 'Добавить презентацию' }}</span>
+    <button class="btn-create" (click)="editingPresentationId ? cancelEdit() : (showForm = !showForm)">
+      <i class="fas" [class.fa-file-powerpoint]="!editingPresentationId" [class.fa-times]="editingPresentationId"></i>
+      <span>{{ showForm && !editingPresentationId ? 'Отменить' : editingPresentationId ? 'Отменить редактирование' :
+        'Добавить презентацию' }}</span>
     </button>
   </div>
 
@@ -44,7 +45,8 @@
     </div>
     <button type="submit" class="btn btn-primary" [disabled]="isUploading">
       <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
-      <span *ngIf="!isUploading">Создать</span>
+      <i *ngIf="!isUploading" [class.fa-plus]="!editingPresentationId" [class.fa-save]="editingPresentationId"></i>
+      <span *ngIf="!isUploading">{{ editingPresentationId ? 'Сохранить изменения' : 'Создать' }}</span>
       <span *ngIf="isUploading">Загрузка...</span>
     </button>
   </form>
@@ -55,10 +57,13 @@
       <p *ngIf="presentation.description">{{ presentation.description }}</p>
       <div class="presentation-actions">
         <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
-          <i class="fas fa-download"></i> Скачать
+          <i class="fas fa-download"></i> <span>Скачать</span>
         </a>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPresentation(presentation)">
+          <i class="fas fa-edit"></i> <span>Редактировать</span>
+        </button>
         <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
-          Удалить
+          <i class="fas fa-trash"></i> <span>Удалить</span>
         </button>
       </div>
     </div>

@@ -168,11 +168,62 @@
               transform: scale(1.1);
             }
           }
-        }
       }
     }
 
-    .form-actions {
+    .color-input {
+      width: 100px;
+      height: 50px;
+      padding: 0;
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .cover-image-upload {
+      .cover-image-preview {
+        margin-top: 1rem;
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 200px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 107, 107, 0.3);
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .btn-remove-image {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          width: 32px;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.9);
+          border: none;
+          border-radius: 50%;
+          color: #ff6b6b;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: scale(1.1);
+          }
+        }
+      }
+    }
+  }
+
+  .form-actions {
       margin-top: 1.5rem;
       display: flex;
       justify-content: flex-end;
@@ -197,6 +248,33 @@
 .post-card {
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+
+  // Если есть заставка, добавляем затемнение для читаемости текста
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.95) 100%);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &[style*="background-image"]::after {
+    opacity: 1;
+  }
+
+  // Контент должен быть поверх затемнения
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 
   &:hover {
     transform: translateY(-4px);
@@ -227,12 +305,6 @@
       gap: 0.5rem;
       white-space: nowrap;
       margin-left: 1rem;
-
-      &::before {
-        content: '\f017';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-      }
     }
   }
 
@@ -271,7 +343,33 @@
     padding-top: 1rem;
     border-top: 2px solid rgba(255, 107, 107, 0.1);
     display: flex;
+    gap: 0.5rem;
     justify-content: flex-end;
+    flex-wrap: wrap;
+
+    .btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+
+      i {
+        margin-right: 0.25rem;
+      }
+
+      // На очень маленьких экранах скрываем текст, оставляем только иконку
+      @media (max-width: 480px) {
+        span {
+          display: none;
+        }
+        
+        i {
+          margin-right: 0;
+        }
+        
+        padding: 0.5rem;
+        min-width: 40px;
+      }
+    }
   }
 }
 

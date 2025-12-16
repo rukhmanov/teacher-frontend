@@ -1,8 +1,9 @@
 <div class="parent-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn-create" (click)="showForm = !showForm">
-      <i class="fas fa-users"></i>
-      <span>{{ showForm ? 'Отменить' : 'Добавить раздел для родителей' }}</span>
+    <button class="btn-create" (click)="editingSectionId ? cancelEdit() : (showForm = !showForm)">
+      <i class="fas" [class.fa-users]="!editingSectionId" [class.fa-times]="editingSectionId"></i>
+      <span>{{ showForm && !editingSectionId ? 'Отменить' : editingSectionId ? 'Отменить редактирование' : 'Добавить
+        раздел для родителей' }}</span>
     </button>
   </div>
 
@@ -15,16 +16,21 @@
       <label class="form-label">Содержание</label>
       <textarea class="form-control" [(ngModel)]="newSection.content" name="content" rows="10"></textarea>
     </div>
-    <button type="submit" class="btn btn-primary">Создать</button>
+    <button type="submit" class="btn btn-primary">{{ editingSectionId ? 'Сохранить изменения' : 'Создать' }}</button>
   </form>
 
   <div class="sections-list">
     <div *ngFor="let section of sections" class="section-card card">
       <h3>{{ section.title }}</h3>
       <div [innerHTML]="section.content"></div>
-      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deleteSection(section.id)">
-        Удалить
-      </button>
+      <div *ngIf="isEditMode" class="section-actions-buttons">
+        <button class="btn btn-primary" (click)="editSection(section)">
+          <i class="fas fa-edit"></i> <span>Редактировать</span>
+        </button>
+        <button class="btn btn-secondary" (click)="deleteSection(section.id)">
+          <i class="fas fa-trash"></i> <span>Удалить</span>
+        </button>
+      </div>
     </div>
 
     <div *ngIf="sections.length === 0" class="no-items">

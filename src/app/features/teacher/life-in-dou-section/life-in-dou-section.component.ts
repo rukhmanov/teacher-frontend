@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { TeachersService } from '../../../core/services/teachers.service';
-import { LifeInDOU } from '../../../core/models/teacher.interface';
+import { UploadService } from '../../../core/services/upload.service';
+import { LifeInDOU, MediaItem } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
@@ -14,20 +17,21 @@ import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
   styleUrl: './life-in-dou-section.component.scss',
 })
 export class LifeInDOUSectionComponent implements OnInit {
-  lifeInDOU: LifeInDOU[] = [];
+  lifeInDOU: LifeInDOU | null = null;
   username: string = '';
   isEditMode = false;
-  showForm = false;
-  newItem: Partial<LifeInDOU> = { title: '', description: '' };
   placeholder = PlaceholderUtil;
+  
+  selectedFiles: File[] = [];
+  isUploading = false;
 
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
+    private uploadService: UploadService,
   ) {}
 
   ngOnInit() {
-    // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
       if (this.username) {
@@ -42,8 +46,8 @@ export class LifeInDOUSectionComponent implements OnInit {
   loadPublicLifeInDOU() {
     if (this.username) {
       this.teachersService.getLifeInDOU(this.username).subscribe({
-        next: (items) => {
-          this.lifeInDOU = items;
+        next: (item) => {
+          this.lifeInDOU = item;
         },
       });
     }
@@ -51,27 +55,84 @@ export class LifeInDOUSectionComponent implements OnInit {
 
   loadOwnLifeInDOU() {
     this.teachersService.getOwnLifeInDOU().subscribe({
-      next: (items) => {
-        this.lifeInDOU = items;
+      next: (item) => {
+        this.lifeInDOU = item;
       },
     });
   }
 
-  createItem() {
-    this.teachersService.createLifeInDOU(this.newItem as any).subscribe({
-      next: () => {
-        this.loadOwnLifeInDOU();
-        this.showForm = false;
-        this.newItem = { title: '', description: '' };
+  onMediaSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      this.selectedFiles = Array.from(input.files);
+    }
+  }
+
+  uploadMedia() {
+    if (this.selectedFiles.length === 0) {
+      alert('Пожалуйста, выберите файлы для загрузки');
+      return;
+    }
+
+    this.isUploading = true;
+    
+    const uploadObservables = this.selectedFiles.map(file => {
+      const type = file.type.startsWith('image/') ? 'photo' : 'video';
+      if (type === 'photo') {
+        return this.uploadService.uploadImage(file).pipe(
+          map(response => ({ type: 'photo' as const, url: response.url }))
+        );
+      } else {
+        return this.uploadService.uploadFile(file).pipe(
+          map(response => ({ type: 'video' as const, url: response.url }))
+        );
+      }
+    });
+
+    // Загружаем все файлы параллельно
+    forkJoin(uploadObservables).subscribe({
+      next: (mediaItems) => {
+        // Добавляем медиа элементы по одному
+        const addObservables = mediaItems.map(item => 
+          this.teachersService.addMediaToLifeInDOU(item)
+        );
+        
+        forkJoin(addObservables).subscribe({
+          next: () => {
+            this.loadOwnLifeInDOU();
+            this.selectedFiles = [];
+            this.isUploading = false;
+            // Очищаем input
+            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+            if (fileInput) {
+              fileInput.value = '';
+            }
+          },
+          error: (err) => {
+            console.error('Error adding media:', err);
+            this.isUploading = false;
+            alert('Ошибка при добавлении медиа элементов');
+          },
+        });
+      },
+      error: (err) => {
+        console.error('Error uploading files:', err);
+        this.isUploading = false;
+        const errorMessage = err?.error?.message || err?.message || 'Ошибка при загрузке файлов';
+        alert(`Ошибка при загрузке файлов: ${errorMessage}`);
       },
     });
   }
 
-  deleteItem(id: string) {
+  deleteMedia(mediaUrl: string) {
     if (confirm('Удалить этот элемент?')) {
-      this.teachersService.deleteLifeInDOU(id).subscribe({
+      this.teachersService.removeMediaFromLifeInDOU(mediaUrl).subscribe({
         next: () => {
           this.loadOwnLifeInDOU();
+        },
+        error: (err) => {
+          console.error('Error deleting media:', err);
+          alert('Ошибка при удалении элемента');
         },
       });
     }
@@ -83,5 +144,19 @@ export class LifeInDOUSectionComponent implements OnInit {
       img.src = this.placeholder.getGalleryPlaceholder();
     }
   }
-}
 
+  getMediaItems(): MediaItem[] {
+    if (!this.lifeInDOU || !this.lifeInDOU.mediaItems) {
+      return [];
+    }
+    
+    return this.lifeInDOU.mediaItems.filter(
+      (item: any) => 
+        item && 
+        typeof item === 'object' && 
+        item.url && 
+        item.type &&
+        !Array.isArray(item)
+    ) as MediaItem[];
+  }
+}

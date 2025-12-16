@@ -91,6 +91,40 @@
     display: flex;
     justify-content: flex-end;
   }
+
+  .section-actions-buttons {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid rgba(255, 107, 107, 0.1);
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+
+    .btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+
+      i {
+        margin-right: 0.25rem;
+      }
+
+      // На очень маленьких экранах скрываем текст, оставляем только иконку
+      @media (max-width: 480px) {
+        span {
+          display: none;
+        }
+        
+        i {
+          margin-right: 0;
+        }
+        
+        padding: 0.5rem;
+        min-width: 40px;
+      }
+    }
+  }
 }
 
 .no-items {

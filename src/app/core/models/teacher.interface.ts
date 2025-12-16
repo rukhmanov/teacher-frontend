@@ -30,6 +30,8 @@ export interface Post {
   content: string;
   images?: string[];
   videos?: string[];
+  cardColor?: string;
+  coverImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +44,8 @@ export interface MasterClass {
   content?: string;
   images?: string[];
   videos?: string[];
+  cardColor?: string;
+  coverImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +57,8 @@ export interface Presentation {
   description?: string;
   fileUrl: string;
   previewImage?: string;
+  cardColor?: string;
+  coverImage?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,17 +69,22 @@ export interface ParentSection {
   title: string;
   content?: string;
   files?: string[];
+  cardColor?: string;
+  coverImage?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface MediaItem {
+  type: 'photo' | 'video';
+  url: string;
+  caption?: string;
 }
 
 export interface LifeInDOU {
   id: string;
   teacherId: string;
-  title: string;
-  description?: string;
-  photos?: string[];
-  videos?: string[];
+  mediaItems?: MediaItem[];
   createdAt: Date;
   updatedAt: Date;
 }

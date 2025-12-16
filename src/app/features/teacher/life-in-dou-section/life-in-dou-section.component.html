@@ -1,48 +1,54 @@
 <div class="life-in-dou-section">
-  <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn-create" (click)="showForm = !showForm">
-      <i class="fas fa-camera"></i>
-      <span>{{ showForm ? 'Отменить' : 'Добавить фото/видео' }}</span>
-    </button>
+  <div *ngIf="isEditMode" class="upload-section">
+    <div class="upload-area card">
+      <h3>
+        <i class="fas fa-cloud-upload-alt"></i> Загрузить фото/видео
+      </h3>
+      <div class="upload-controls">
+        <input type="file" #mediaInput class="file-input" accept="image/*,video/*" multiple
+          (change)="onMediaSelect($event)" />
+        <button type="button" class="btn-upload" (click)="mediaInput.click()" [disabled]="isUploading">
+          <i class="fas fa-folder-open"></i>
+          <span>Выбрать файлы</span>
+        </button>
+        <div *ngIf="selectedFiles.length > 0" class="selected-files">
+          <p>Выбрано файлов: {{ selectedFiles.length }}</p>
+          <button type="button" class="btn btn-primary" (click)="uploadMedia()" [disabled]="isUploading">
+            <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+            <i *ngIf="!isUploading" class="fas fa-upload"></i>
+            <span *ngIf="!isUploading">Загрузить</span>
+            <span *ngIf="isUploading">Загрузка...</span>
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="selectedFiles = []; mediaInput.value = ''"
+            [disabled]="isUploading">
+            Отменить
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <form *ngIf="showForm && isEditMode" class="item-form card" (ngSubmit)="createItem()">
-    <div class="form-group">
-      <label class="form-label">Название</label>
-      <input type="text" class="form-control" [(ngModel)]="newItem.title" name="title" required />
-    </div>
-    <div class="form-group">
-      <label class="form-label">Описание</label>
-      <textarea class="form-control" [(ngModel)]="newItem.description" name="description" rows="5"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Создать</button>
-  </form>
-
-  <div class="items-list">
-    <div *ngFor="let item of lifeInDOU" class="item-card card">
-      <h3>{{ item.title }}</h3>
-      <p *ngIf="item.description">{{ item.description }}</p>
-      <div *ngIf="item.photos && item.photos.length > 0" class="photos">
-        <img *ngFor="let photo of item.photos" [src]="placeholder.getImageUrl(photo, 'gallery')" alt="Photo"
+  <div *ngIf="getMediaItems().length > 0" class="masonry-gallery">
+    <div *ngFor="let mediaItem of getMediaItems()" class="masonry-item" [class.photo]="mediaItem.type === 'photo'"
+      [class.video]="mediaItem.type === 'video'">
+      <div class="media-wrapper">
+        <img *ngIf="mediaItem.type === 'photo'" [src]="placeholder.getImageUrl(mediaItem.url, 'gallery')" alt="Photo"
           (error)="onImageError($event)" />
-      </div>
-      <div *ngIf="isEditMode" class="actions">
-        <button class="btn btn-secondary" (click)="deleteItem(item.id)">
-          <i class="fas fa-trash"></i> Удалить
+        <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"></video>
+        <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
+        <button *ngIf="isEditMode" class="btn-delete-media" (click)="deleteMedia(mediaItem.url)" title="Удалить">
+          <i class="fas fa-times"></i>
         </button>
       </div>
     </div>
+  </div>
 
-    <div *ngIf="lifeInDOU.length === 0" class="no-items">
-      <div class="empty-state">
-        <i class="fas fa-camera"></i>
-        <h3>Жизнь в ДОУ</h3>
-        <p *ngIf="isEditMode">Добавьте фото и видео из жизни детского сада!</p>
-        <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
-        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
-          <i class="fas fa-plus"></i> Добавить фото/видео
-        </button>
-      </div>
+  <div *ngIf="getMediaItems().length === 0" class="no-items">
+    <div class="empty-state">
+      <i class="fas fa-camera"></i>
+      <h3>Жизнь в ДОУ</h3>
+      <p *ngIf="isEditMode">Загрузите фото и видео из жизни детского сада!</p>
+      <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
     </div>
   </div>
 </div>

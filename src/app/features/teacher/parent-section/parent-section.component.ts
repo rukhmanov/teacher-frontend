@@ -17,6 +17,7 @@ export class ParentSectionComponent implements OnInit {
   username: string = '';
   isEditMode = false;
   showForm = false;
+  editingSectionId: string | null = null;
   newSection: Partial<ParentSection> = { title: '', content: '' };
 
   constructor(
@@ -56,13 +57,36 @@ export class ParentSectionComponent implements OnInit {
   }
 
   createSection() {
-    this.teachersService.createParentSection(this.newSection as any).subscribe({
-      next: () => {
-        this.loadOwnSections();
-        this.showForm = false;
-        this.newSection = { title: '', content: '' };
-      },
-    });
+    if (this.editingSectionId) {
+      this.teachersService.updateParentSection(this.editingSectionId, this.newSection as any).subscribe({
+        next: () => {
+          this.loadOwnSections();
+          this.cancelEdit();
+        },
+      });
+    } else {
+      this.teachersService.createParentSection(this.newSection as any).subscribe({
+        next: () => {
+          this.loadOwnSections();
+          this.cancelEdit();
+        },
+      });
+    }
+  }
+
+  editSection(section: ParentSection) {
+    this.editingSectionId = section.id;
+    this.newSection = {
+      title: section.title,
+      content: section.content,
+    };
+    this.showForm = true;
+  }
+
+  cancelEdit() {
+    this.showForm = false;
+    this.editingSectionId = null;
+    this.newSection = { title: '', content: '' };
   }
 
   deleteSection(id: string) {

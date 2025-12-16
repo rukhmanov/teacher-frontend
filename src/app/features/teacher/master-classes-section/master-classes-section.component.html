@@ -1,8 +1,9 @@
 <div class="master-classes-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn-create" (click)="showForm = !showForm">
-      <i class="fas fa-graduation-cap"></i>
-      <span>{{ showForm ? 'Отменить' : 'Добавить мастер-класс' }}</span>
+    <button class="btn-create" (click)="editingMasterClassId ? cancelEdit() : (showForm = !showForm)">
+      <i class="fas" [class.fa-graduation-cap]="!editingMasterClassId" [class.fa-times]="editingMasterClassId"></i>
+      <span>{{ showForm && !editingMasterClassId ? 'Отменить' : editingMasterClassId ? 'Отменить редактирование' :
+        'Добавить мастер-класс' }}</span>
     </button>
   </div>
 
@@ -19,11 +20,43 @@
       <label class="form-label">Содержание</label>
       <textarea class="form-control" [(ngModel)]="newMasterClass.content" name="content" rows="10"></textarea>
     </div>
-    <button type="submit" class="btn btn-primary">Создать</button>
+    <div class="form-group">
+      <label class="form-label">
+        <i class="fas fa-palette"></i> Цвет карточки
+      </label>
+      <input type="color" class="form-control color-input" [(ngModel)]="newMasterClass.cardColor" name="cardColor" />
+      <small class="form-hint">Выберите цвет фона карточки (необязательно)</small>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        <i class="fas fa-image"></i> Заставка карточки
+      </label>
+      <div class="cover-image-upload">
+        <input type="file" #coverInput class="file-input" accept="image/*" (change)="onCoverImageSelect($event)" />
+        <button type="button" class="btn-upload" (click)="coverInput.click()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Выбрать заставку</span>
+        </button>
+        <div *ngIf="coverImagePreview || newMasterClass.coverImage" class="cover-image-preview">
+          <img [src]="coverImagePreview || placeholder.getImageUrl(newMasterClass.coverImage, 'gallery')"
+            alt="Cover preview" />
+          <button type="button" class="btn-remove-image" (click)="removeCoverImage()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <small class="form-hint">Загрузите изображение для заставки карточки (необязательно)</small>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">{{ editingMasterClassId ? 'Сохранить изменения' : 'Создать'
+      }}</button>
   </form>
 
   <div class="master-classes-list">
-    <div *ngFor="let masterClass of masterClasses" class="master-class-card card">
+    <div *ngFor="let masterClass of masterClasses" class="master-class-card card"
+      [style.background-color]="masterClass.cardColor || ''"
+      [style.background-image]="masterClass.coverImage ? 'url(' + placeholder.getImageUrl(masterClass.coverImage, 'gallery') + ')' : ''"
+      [style.background-size]="masterClass.coverImage ? 'cover' : ''"
+      [style.background-position]="masterClass.coverImage ? 'center' : ''">
       <h3>{{ masterClass.title }}</h3>
       <p *ngIf="masterClass.description" class="description">
         {{ masterClass.description }}
@@ -32,8 +65,11 @@
         <p [innerHTML]="masterClass.content"></p>
       </div>
       <div *ngIf="isEditMode" class="actions">
+        <button class="btn btn-primary" (click)="editMasterClass(masterClass)">
+          <i class="fas fa-edit"></i> <span>Редактировать</span>
+        </button>
         <button class="btn btn-secondary" (click)="deleteMasterClass(masterClass.id)">
-          Удалить
+          <i class="fas fa-trash"></i> <span>Удалить</span>
         </button>
       </div>
     </div>
