@@ -22,6 +22,35 @@
     </div>
     <div class="form-group">
       <label class="form-label">
+        <i class="fas fa-images"></i> Изображения
+      </label>
+      <div class="image-upload-area">
+        <input type="file" #imageInput class="file-input" accept="image/*" multiple (change)="onImageSelect($event)" />
+        <button type="button" class="btn-upload" (click)="imageInput.click()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Выбрать изображения</span>
+        </button>
+        <div *ngIf="imagePreviews.length > 0 || newMasterClass.images.length > 0" class="image-previews">
+          <!-- Существующие изображения -->
+          <div *ngFor="let imageUrl of newMasterClass.images; let i = index" class="image-preview">
+            <img [src]="placeholder.getImageUrl(imageUrl, 'post')" alt="Master class image"
+              (error)="onImageError($event, 'post')" />
+            <button type="button" class="btn-remove-image" (click)="newMasterClass.images.splice(i, 1)">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <!-- Новые превью изображений -->
+          <div *ngFor="let preview of imagePreviews; let i = index" class="image-preview">
+            <img [src]="preview" alt="Preview" />
+            <button type="button" class="btn-remove-image" (click)="removeImage(i)">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
         <i class="fas fa-palette"></i> Цвет карточки
       </label>
       <div class="color-input-wrapper">
@@ -44,6 +73,13 @@
       <p *ngIf="masterClass.description" class="description">
         {{ masterClass.description }}
       </p>
+      <div *ngIf="masterClass.images && masterClass.images.length > 0" class="master-class-images">
+        <ng-container *ngFor="let image of masterClass.images; let i = index">
+          <img *ngIf="i < 3" [src]="getImageUrl(image, 'post')" alt="Master class image"
+            (error)="onImageError($event, 'post')" (click)="openImageCarousel(masterClass.images || [], i)"
+            class="clickable-image" />
+        </ng-container>
+      </div>
       <div *ngIf="masterClass.content" class="content">
         <div class="content-text" [innerHTML]="getTruncatedContent(masterClass.content)"></div>
       </div>
@@ -88,8 +124,18 @@
         <p *ngIf="selectedMasterClass.description" class="modal-description">
           {{ selectedMasterClass.description }}
         </p>
+        <div *ngIf="selectedMasterClass.images && selectedMasterClass.images.length > 0" class="modal-images">
+          <img *ngFor="let image of selectedMasterClass.images; let i = index" [src]="getImageUrl(image, 'post')"
+            alt="Master class image" (error)="onImageError($event, 'post')"
+            (click)="openImageCarousel(selectedMasterClass!.images || [], i)" class="clickable-image" />
+        </div>
         <div *ngIf="selectedMasterClass.content" class="modal-text" [innerHTML]="selectedMasterClass.content"></div>
       </div>
     </div>
   </div>
+
+  <!-- Карусель изображений -->
+  <app-image-carousel *ngIf="showCarousel" [images]="carouselImages" [startIndex]="carouselStartIndex"
+    (close)="closeCarousel()">
+  </app-image-carousel>
 </div>
