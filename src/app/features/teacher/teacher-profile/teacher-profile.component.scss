@@ -85,6 +85,38 @@
   }
 }
 
+.profile-nav-wrapper {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+
+  .btn-link-to-list {
+    font-size: 0.85rem;
+    color: var(--text-brown);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.3s ease;
+    opacity: 0.8;
+
+    &:hover {
+      color: var(--primary-orange);
+      opacity: 1;
+    }
+
+    i {
+      font-size: 0.9rem;
+    }
+
+    span {
+      @media (max-width: 480px) {
+        display: none;
+      }
+    }
+  }
+}
+
 .profile-nav {
   display: flex;
   gap: 1rem;

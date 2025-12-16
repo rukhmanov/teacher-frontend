@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { Presentation } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-presentations-section',
@@ -19,10 +20,11 @@ export class PresentationsSectionComponent implements OnInit {
   isEditMode = false;
   showForm = false;
   editingPresentationId: string | null = null;
-  newPresentation: Partial<Presentation> = { title: '', description: '', fileUrl: '' };
+  newPresentation: Partial<Presentation> = { title: '', description: '', fileUrl: '', cardColor: '' };
   selectedFile: File | null = null;
   useFileUpload = false;
   isUploading = false;
+  placeholder = PlaceholderUtil;
 
   constructor(
     private route: ActivatedRoute,
@@ -84,10 +86,15 @@ export class PresentationsSectionComponent implements OnInit {
       return;
     }
 
+    this.continuePresentationCreation();
+  }
+
+  private continuePresentationCreation() {
     // Если выбран режим загрузки файла
     if (this.useFileUpload) {
       if (!this.selectedFile) {
         alert('Пожалуйста, выберите файл для загрузки');
+        this.isUploading = false;
         return;
       }
       this.isUploading = true;
@@ -105,6 +112,7 @@ export class PresentationsSectionComponent implements OnInit {
       // Режим URL
       if (!this.newPresentation.fileUrl) {
         alert('Пожалуйста, укажите URL файла');
+        this.isUploading = false;
         return;
       }
       this.createPresentationWithUrl();
@@ -147,6 +155,7 @@ export class PresentationsSectionComponent implements OnInit {
       title: presentation.title,
       description: presentation.description,
       fileUrl: presentation.fileUrl,
+      cardColor: presentation.cardColor || '',
     };
     this.selectedFile = null;
     this.useFileUpload = false;
@@ -160,9 +169,13 @@ export class PresentationsSectionComponent implements OnInit {
   }
 
   private resetForm() {
-    this.newPresentation = { title: '', description: '', fileUrl: '' };
+    this.newPresentation = { title: '', description: '', fileUrl: '', cardColor: '' };
     this.selectedFile = null;
     this.useFileUpload = false;
+  }
+
+  removeCardColor() {
+    this.newPresentation.cardColor = '';
   }
 
   deletePresentation(id: string) {

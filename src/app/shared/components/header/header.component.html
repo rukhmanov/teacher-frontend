@@ -5,12 +5,26 @@
       <ng-container *ngIf="isTeacherPage">
         <div class="teacher-header">
           <span class="username">{{ getDisplayName() }}</span>
-          <button *ngIf="currentUser" class="btn-logout" (click)="logout()">Выйти</button>
+          <div class="header-actions">
+            <a routerLink="/" class="btn-link-to-list" title="Список всех педагогов">
+              <i class="fas fa-users"></i>
+              <span>Список педагогов</span>
+            </a>
+            <button *ngIf="currentUser" class="btn-logout" (click)="logout()">Выйти</button>
+          </div>
         </div>
       </ng-container>
 
-      <!-- Полный хедер для всех остальных страниц (включая /me/*) -->
-      <ng-container *ngIf="!isTeacherPage">
+      <!-- Упрощенный хедер для страницы редактирования /me/* -->
+      <ng-container *ngIf="isEditPage">
+        <div class="edit-header">
+          <span class="username">{{ getDisplayName() }}</span>
+          <button class="btn-logout" (click)="logout()">Выйти</button>
+        </div>
+      </ng-container>
+
+      <!-- Полный хедер для всех остальных страниц -->
+      <ng-container *ngIf="!isTeacherPage && !isEditPage">
         <a routerLink="/" class="logo">
           <i class="fas fa-graduation-cap"></i>
           <span>Педагогический Портал</span>

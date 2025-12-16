@@ -28,7 +28,8 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-beige) 100%);
+  background: linear-gradient(135deg, #FFFBF5 0%, #FFF8E7 50%, #F5F5DC 100%);
+  background-attachment: fixed;
   color: var(--text-dark);
   min-height: 100vh;
   line-height: 1.6;

@@ -26,11 +26,8 @@ export class MasterClassesSectionComponent implements OnInit {
     description: '',
     content: '',
     cardColor: '',
-    coverImage: '',
   };
   placeholder = PlaceholderUtil;
-  selectedCoverImage: File | null = null;
-  coverImagePreview: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -71,20 +68,7 @@ export class MasterClassesSectionComponent implements OnInit {
   }
 
   createMasterClass() {
-    if (this.selectedCoverImage) {
-      this.uploadService.uploadImage(this.selectedCoverImage).subscribe({
-        next: (response) => {
-          this.newMasterClass.coverImage = response.url;
-          this.submitMasterClass();
-        },
-        error: (err) => {
-          console.error('Error uploading cover image:', err);
-          this.submitMasterClass();
-        },
-      });
-    } else {
-      this.submitMasterClass();
-    }
+    this.submitMasterClass();
   }
 
   private submitMasterClass() {
@@ -112,39 +96,18 @@ export class MasterClassesSectionComponent implements OnInit {
       description: masterClass.description,
       content: masterClass.content,
       cardColor: masterClass.cardColor || '',
-      coverImage: masterClass.coverImage || '',
     };
-    this.selectedCoverImage = null;
-    this.coverImagePreview = masterClass.coverImage ? this.placeholder.getImageUrl(masterClass.coverImage, 'gallery') : null;
     this.showForm = true;
   }
 
   cancelEdit() {
     this.showForm = false;
     this.editingMasterClassId = null;
-    this.newMasterClass = { title: '', description: '', content: '', cardColor: '', coverImage: '' };
-    this.selectedCoverImage = null;
-    this.coverImagePreview = null;
+    this.newMasterClass = { title: '', description: '', content: '', cardColor: '' };
   }
 
-  onCoverImageSelect(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedCoverImage = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          this.coverImagePreview = e.target.result as string;
-        }
-      };
-      reader.readAsDataURL(this.selectedCoverImage);
-    }
-  }
-
-  removeCoverImage() {
-    this.selectedCoverImage = null;
-    this.coverImagePreview = null;
-    this.newMasterClass.coverImage = '';
+  removeCardColor() {
+    this.newMasterClass.cardColor = '';
   }
 
   deleteMasterClass(id: string) {

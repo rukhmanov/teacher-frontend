@@ -19,6 +19,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isMenuOpen = false;
   isTeacherPage = false;
+  isEditPage = false;
   teacherProfile: TeacherProfile | null = null;
   private routeSubscription?: Subscription;
 
@@ -32,6 +33,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
+      // Если это страница редактирования и есть пользователь, загружаем его профиль
+      if (this.isEditPage && user) {
+        this.loadOwnProfile();
+      }
     });
 
     // Отслеживаем изменения роута для определения страницы педагога
@@ -40,7 +45,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .subscribe((event: any) => {
         // Упрощенный хедер только для публичных страниц педагога, не для редактирования
         const isTeacherPage = (event.url?.includes('/teacher/') && !event.url?.includes('/me/')) || false;
+        const isEditPage = event.url?.includes('/me/') || false;
         this.isTeacherPage = isTeacherPage;
+        this.isEditPage = isEditPage;
         
         if (isTeacherPage) {
           // Извлекаем username из URL
@@ -48,6 +55,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
           if (match && match[1]) {
             this.loadTeacherProfile(match[1]);
           }
+        } else if (isEditPage && this.currentUser) {
+          // Загружаем профиль текущего пользователя для страницы редактирования
+          this.loadOwnProfile();
         } else {
           this.teacherProfile = null;
         }
@@ -56,12 +66,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
     // Проверяем текущий URL при инициализации
     const currentUrl = this.router.url;
     this.isTeacherPage = (currentUrl.includes('/teacher/') && !currentUrl.includes('/me/')) || false;
+    this.isEditPage = currentUrl.includes('/me/') || false;
     
     if (this.isTeacherPage) {
       const match = currentUrl.match(/\/teacher\/([^\/]+)/);
       if (match && match[1]) {
         this.loadTeacherProfile(match[1]);
       }
+    } else if (this.isEditPage && this.currentUser) {
+      this.loadOwnProfile();
     }
   }
 
@@ -83,7 +96,34 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadOwnProfile() {
+    this.teachersService.getOwnProfile().subscribe({
+      next: (teacher) => {
+        this.teacherProfile = teacher;
+      },
+      error: (err) => {
+        console.error('Error loading own profile for header:', err);
+        this.teacherProfile = null;
+      },
+    });
+  }
+
   getDisplayName(): string {
+    if (this.isEditPage) {
+      // Для страницы редактирования используем имя из профиля учителя
+      if (this.teacherProfile) {
+        const firstName = this.teacherProfile.firstName || '';
+        const lastName = this.teacherProfile.lastName || '';
+        if (firstName || lastName) {
+          return `${firstName} ${lastName}`.trim();
+        }
+      }
+      // Если профиль еще не загружен, используем email
+      if (this.currentUser) {
+        return this.currentUser.email || 'Пользователь';
+      }
+      return 'Пользователь';
+    }
     if (this.teacherProfile) {
       const firstName = this.teacherProfile.firstName || '';
       const lastName = this.teacherProfile.lastName || '';

@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
+import { UploadService } from '../../../core/services/upload.service';
 import { ParentSection } from '../../../core/models/teacher.interface';
+import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
   selector: 'app-parent-section',
@@ -18,11 +20,14 @@ export class ParentSectionComponent implements OnInit {
   isEditMode = false;
   showForm = false;
   editingSectionId: string | null = null;
-  newSection: Partial<ParentSection> = { title: '', content: '' };
+  newSection: Partial<ParentSection> = { title: '', content: '', cardColor: '' };
+  placeholder = PlaceholderUtil;
+  isUploading = false;
 
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
+    private uploadService: UploadService,
   ) {}
 
   ngOnInit() {
@@ -57,11 +62,21 @@ export class ParentSectionComponent implements OnInit {
   }
 
   createSection() {
+    this.submitSection();
+  }
+
+  private submitSection() {
     if (this.editingSectionId) {
       this.teachersService.updateParentSection(this.editingSectionId, this.newSection as any).subscribe({
         next: () => {
           this.loadOwnSections();
           this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
+        },
+        complete: () => {
+          this.isUploading = false;
         },
       });
     } else {
@@ -69,6 +84,12 @@ export class ParentSectionComponent implements OnInit {
         next: () => {
           this.loadOwnSections();
           this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
+        },
+        complete: () => {
+          this.isUploading = false;
         },
       });
     }
@@ -79,6 +100,7 @@ export class ParentSectionComponent implements OnInit {
     this.newSection = {
       title: section.title,
       content: section.content,
+      cardColor: section.cardColor || '',
     };
     this.showForm = true;
   }
@@ -86,7 +108,11 @@ export class ParentSectionComponent implements OnInit {
   cancelEdit() {
     this.showForm = false;
     this.editingSectionId = null;
-    this.newSection = { title: '', content: '' };
+    this.newSection = { title: '', content: '', cardColor: '' };
+  }
+
+  removeCardColor() {
+    this.newSection.cardColor = '';
   }
 
   deleteSection(id: string) {

@@ -68,29 +68,14 @@
             <label class="form-label">
               <i class="fas fa-palette"></i> Цвет карточки
             </label>
-            <input type="color" class="form-control color-input" [(ngModel)]="newPost.cardColor" name="cardColor" />
-            <small class="form-hint">Выберите цвет фона карточки (необязательно)</small>
-          </div>
-          <div class="form-group">
-            <label class="form-label">
-              <i class="fas fa-image"></i> Заставка карточки
-            </label>
-            <div class="cover-image-upload">
-              <input type="file" #coverInput class="file-input" accept="image/*"
-                (change)="onCoverImageSelect($event)" />
-              <button type="button" class="btn-upload" (click)="coverInput.click()">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <span>Выбрать заставку</span>
+            <div class="color-input-wrapper">
+              <input type="color" class="form-control color-input" [(ngModel)]="newPost.cardColor" name="cardColor" />
+              <button *ngIf="newPost.cardColor" type="button" class="btn-remove-color" (click)="removeCardColor()"
+                title="Удалить цвет">
+                <i class="fas fa-times"></i>
               </button>
-              <div *ngIf="coverImagePreview || newPost.coverImage" class="cover-image-preview">
-                <img [src]="coverImagePreview || placeholder.getImageUrl(newPost.coverImage, 'post')"
-                  alt="Cover preview" />
-                <button type="button" class="btn-remove-image" (click)="removeCoverImage()">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <small class="form-hint">Загрузите изображение для заставки карточки (необязательно)</small>
             </div>
+            <small class="form-hint">Выберите цвет фона карточки (необязательно)</small>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-publish">
@@ -102,10 +87,7 @@
       </div>
 
       <div class="posts-list">
-        <div *ngFor="let post of posts" class="post-card card" [style.background-color]="post.cardColor || ''"
-          [style.background-image]="post.coverImage ? 'url(' + placeholder.getImageUrl(post.coverImage, 'post') + ')' : ''"
-          [style.background-size]="post.coverImage ? 'cover' : ''"
-          [style.background-position]="post.coverImage ? 'center' : ''">
+        <div *ngFor="let post of posts" class="post-card card" [style.background-color]="post.cardColor || null">
           <div class="post-header">
             <h3>{{ post.title }}</h3>
             <span class="post-date">
