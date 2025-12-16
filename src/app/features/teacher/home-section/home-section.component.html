@@ -91,8 +91,8 @@
             <h3>Пока нет постов</h3>
             <p *ngIf="isEditMode">Создайте первый пост, чтобы поделиться новостями и мыслями!</p>
             <p *ngIf="!isEditMode">Здесь будут появляться посты педагога</p>
-            <button *ngIf="isEditMode" class="btn btn-primary" (click)="showPostForm = true">
-              <i class="fas fa-plus"></i> Создать первый пост
+            <button *ngIf="isEditMode" class="btn btn-primary inline-flex" (click)="showPostForm = true">
+              <i class="fas fa-plus"></i> <span>Создать первый пост</span>
             </button>
           </div>
         </div>

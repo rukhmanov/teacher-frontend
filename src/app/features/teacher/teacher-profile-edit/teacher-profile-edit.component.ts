@@ -8,13 +8,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TeacherProfile, SocialLink, SocialPlatform } from '../../../core/models/teacher.interface';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
-import { YandexMapComponent } from '../../../shared/components/yandex-map/yandex-map.component';
-import { environment } from '../../../../environments/environment';
+import { AddressMapComponent } from '../../../shared/components/address-map/address-map.component';
 
 @Component({
   selector: 'app-teacher-profile-edit',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, YandexMapComponent, RouterOutlet],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, AddressMapComponent, RouterOutlet],
   templateUrl: './teacher-profile-edit.component.html',
   styleUrl: './teacher-profile-edit.component.scss',
 })
@@ -28,6 +27,7 @@ export class TeacherProfileEditComponent implements OnInit {
     url: '',
   };
   placeholder = PlaceholderUtil;
+  isAddressValid: boolean = false; // Флаг валидности адреса
 
   router = inject(Router);
 
@@ -45,6 +45,9 @@ export class TeacherProfileEditComponent implements OnInit {
     }
     this.loadProfile();
     this.loadSocialLinks();
+    
+    // Инициализируем валидность адреса
+    this.isAddressValid = false;
   }
 
   loadProfile() {
@@ -57,6 +60,10 @@ export class TeacherProfileEditComponent implements OnInit {
     this.teachersService.getOwnProfile().subscribe({
       next: (profile) => {
         this.profile = profile;
+        // Если уже есть сохраненный адрес, считаем его валидным
+        if (profile?.location) {
+          this.isAddressValid = true;
+        }
       },
       error: (err) => {
         console.error('Error loading profile:', err);
@@ -102,14 +109,26 @@ export class TeacherProfileEditComponent implements OnInit {
 
   updateProfile() {
     if (this.profile) {
-      // Если есть адрес, но нет координат, пытаемся получить координаты
-      if (this.profile.location && (!this.profile.latitude || !this.profile.longitude)) {
-        this.geocodeAddress(this.profile.location);
-      } else {
-        this.saveProfile();
+      this.saveProfile();
+    }
+  }
+
+  onAddressSelected(event: { address: string; coordinates?: { lat: number; lon: number }; fullData?: any }) {
+    if (this.profile) {
+      this.profile.location = event.address;
+      
+      // Сохраняем координаты, если они есть
+      if (event.coordinates) {
+        this.profile.latitude = event.coordinates.lat;
+        this.profile.longitude = event.coordinates.lon;
       }
     }
   }
+
+  onAddressValid(isValid: boolean) {
+    this.isAddressValid = isValid;
+  }
+
 
   private saveProfile() {
     if (this.profile) {
@@ -121,57 +140,6 @@ export class TeacherProfileEditComponent implements OnInit {
     }
   }
 
-  private geocodeAddress(address: string) {
-    // Загружаем Яндекс карты API если еще не загружен
-    if (typeof (window as any).ymaps === 'undefined') {
-      // Проверяем, не загружается ли уже скрипт
-      if (document.querySelector('script[src*="api-maps.yandex.ru"]')) {
-        // Ждем загрузки существующего скрипта
-        const checkInterval = setInterval(() => {
-          if (typeof (window as any).ymaps !== 'undefined') {
-            clearInterval(checkInterval);
-            this.performGeocode(address);
-          }
-        }, 100);
-        return;
-      }
-
-      const apiKey = environment.yandexMapsApiKey;
-      const script = document.createElement('script');
-      script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=ru_RU`;
-      script.async = true;
-      script.onload = () => {
-        this.performGeocode(address);
-      };
-      document.head.appendChild(script);
-    } else {
-      this.performGeocode(address);
-    }
-  }
-
-  private performGeocode(address: string) {
-    if (typeof (window as any).ymaps === 'undefined') {
-      this.saveProfile();
-      return;
-    }
-
-    (window as any).ymaps.ready(() => {
-      (window as any).ymaps.geocode(address, {
-        results: 1
-      }).then((res: any) => {
-        const firstGeoObject = res.geoObjects.get(0);
-        if (firstGeoObject && this.profile) {
-          const coords = firstGeoObject.geometry.getCoordinates();
-          this.profile.latitude = coords[0];
-          this.profile.longitude = coords[1];
-        }
-        this.saveProfile();
-      }).catch(() => {
-        // Если геокодирование не удалось, сохраняем без координат
-        this.saveProfile();
-      });
-    });
-  }
 
   onPhotoUpload(event: any) {
     const file = event.target.files[0];

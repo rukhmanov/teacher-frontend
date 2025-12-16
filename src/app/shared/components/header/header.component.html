@@ -1,33 +1,38 @@
 <header class="header">
   <div class="container">
     <div class="header-content">
-      <!-- Упрощенный хедер для страницы педагога -->
-      <ng-container *ngIf="isTeacherPage && currentUser">
+      <!-- Упрощенный хедер только для публичных страниц педагога -->
+      <ng-container *ngIf="isTeacherPage">
         <div class="teacher-header">
-          <span class="username">{{ currentUser.username }}</span>
-          <button class="btn-logout" (click)="logout()">Выйти</button>
+          <span class="username">{{ getDisplayName() }}</span>
+          <button *ngIf="currentUser" class="btn-logout" (click)="logout()">Выйти</button>
         </div>
       </ng-container>
 
-      <!-- Полный хедер для остальных страниц -->
-      <ng-container *ngIf="!isTeacherPage || !currentUser">
+      <!-- Полный хедер для всех остальных страниц (включая /me/*) -->
+      <ng-container *ngIf="!isTeacherPage">
         <a routerLink="/" class="logo">
           <i class="fas fa-graduation-cap"></i>
           <span>Педагогический Портал</span>
         </a>
 
         <nav class="nav" [class.menu-open]="isMenuOpen">
-          <a routerLink="/" routerLinkActive="active">Главная</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <i class="fas fa-home"></i> Главная
+          </a>
           <ng-container *ngIf="currentUser">
             <a *ngIf="currentUser.role === 'TEACHER'" [routerLink]="['/me/profile']" routerLinkActive="active"
-              class="btn-my-profile">
+              [routerLinkActiveOptions]="{exact: false}" class="btn-my-profile">
               <i class="fas fa-user-edit"></i>
               <span>Редактировать профиль</span>
             </a>
-            <a *ngIf="currentUser.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active">
-              Админ панель
+            <a *ngIf="currentUser.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active"
+              [routerLinkActiveOptions]="{exact: false}">
+              <i class="fas fa-cog"></i> Админ панель
             </a>
-            <button class="btn-logout" (click)="logout()">Выйти</button>
+            <button class="btn-logout" (click)="logout()">
+              <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
           </ng-container>
         </nav>
 

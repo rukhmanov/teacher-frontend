@@ -16,22 +16,51 @@
       <textarea class="form-control" [(ngModel)]="newPresentation.description" name="description"></textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">URL файла</label>
-      <input type="url" class="form-control" [(ngModel)]="newPresentation.fileUrl" name="fileUrl" required />
+      <label class="form-label">Способ добавления файла</label>
+      <div class="file-method-toggle">
+        <button type="button" class="toggle-btn" [class.active]="!useFileUpload" (click)="switchToUrl()">
+          <i class="fas fa-link"></i> URL
+        </button>
+        <button type="button" class="toggle-btn" [class.active]="useFileUpload" (click)="switchToFileUpload()">
+          <i class="fas fa-upload"></i> Загрузить файл
+        </button>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary">Создать</button>
+    <div class="form-group" *ngIf="!useFileUpload">
+      <label class="form-label">URL файла</label>
+      <input type="url" class="form-control" [(ngModel)]="newPresentation.fileUrl" name="fileUrl"
+        placeholder="https://example.com/presentation.pdf" />
+    </div>
+    <div class="form-group" *ngIf="useFileUpload">
+      <label class="form-label">Файл презентации</label>
+      <input type="file" class="form-control" (change)="onFileSelect($event)" accept=".pdf,.ppt,.pptx,.odp"
+        #fileInput />
+      <small class="form-hint" *ngIf="selectedFile">
+        Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+      </small>
+      <small class="form-hint" *ngIf="!selectedFile">
+        Поддерживаемые форматы: PDF, PPT, PPTX, ODP (макс. 50 MB)
+      </small>
+    </div>
+    <button type="submit" class="btn btn-primary" [disabled]="isUploading">
+      <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+      <span *ngIf="!isUploading">Создать</span>
+      <span *ngIf="isUploading">Загрузка...</span>
+    </button>
   </form>
 
   <div class="presentations-list">
     <div *ngFor="let presentation of presentations" class="presentation-card card">
       <h3>{{ presentation.title }}</h3>
       <p *ngIf="presentation.description">{{ presentation.description }}</p>
-      <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
-        <i class="fas fa-download"></i> Скачать
-      </a>
-      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
-        Удалить
-      </button>
+      <div class="presentation-actions">
+        <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
+          <i class="fas fa-download"></i> Скачать
+        </a>
+        <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
+          Удалить
+        </button>
+      </div>
     </div>
 
     <div *ngIf="presentations.length === 0" class="no-items">

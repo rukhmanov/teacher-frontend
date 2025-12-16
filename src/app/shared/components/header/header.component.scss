@@ -40,6 +40,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    cursor: pointer;
 
     &:hover,
     &.active {
@@ -60,10 +61,21 @@
         color: white;
       }
 
+      &.active {
+        background: linear-gradient(135deg, #ff6b6b 0%, var(--primary-orange) 100%);
+        color: white;
+      }
+
       i {
         font-size: 0.9rem;
       }
     }
+  }
+
+  .btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 }
 

@@ -69,6 +69,72 @@ p {
   text-decoration: none;
   display: inline-block;
   text-align: center;
+
+  // Стили для иконок в кнопках
+  i {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+// Кнопки с иконками - используем flex для правильного отступа
+.btn i + *,
+.btn:has(i) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+// Более надежный способ - если кнопка содержит иконку
+.btn-primary i,
+.btn-secondary i,
+.btn i {
+  margin-right: 0.5rem;
+}
+
+// Улучшенная видимость иконок в кнопках
+.btn-primary i {
+  color: var(--white) !important;
+  font-weight: 900;
+  font-size: 1.1em;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(255, 255, 255, 0.3);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  opacity: 1 !important;
+}
+
+.btn-secondary i {
+  color: var(--text-dark);
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+// Для кнопок с flex layout
+.btn[style*="flex"],
+.btn.inline-flex {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem;
+  
+  i {
+    margin: 0 !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  span {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1.5;
+  }
 }
 
 .btn-primary {

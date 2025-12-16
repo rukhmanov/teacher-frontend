@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { TeacherProfile, SocialLink, SocialPlatform } from '../../../core/models/teacher.interface';
-import { YandexMapComponent } from '../../../shared/components/yandex-map/yandex-map.component';
+import { AddressMapComponent } from '../../../shared/components/address-map/address-map.component';
 
 @Component({
   selector: 'app-contact-section',
   standalone: true,
-  imports: [CommonModule, YandexMapComponent],
+  imports: [CommonModule, AddressMapComponent],
   templateUrl: './contact-section.component.html',
   styleUrl: './contact-section.component.scss',
 })

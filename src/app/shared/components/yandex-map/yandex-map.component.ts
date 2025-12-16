@@ -30,6 +30,7 @@ declare var ymaps: any;
 export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
   @Input() address?: string;
+  @Input() mapLink?: string;
   @Input() latitude?: number;
   @Input() longitude?: number;
   @Input() editable: boolean = false;
@@ -49,8 +50,8 @@ export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnC
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    // Если карта уже инициализирована и изменились координаты или адрес, обновляем карту
-    if (this.mapInitialized && this.map && (changes['address'] || changes['latitude'] || changes['longitude'])) {
+    // Если карта уже инициализирована и изменились координаты, адрес или ссылка, обновляем карту
+    if (this.mapInitialized && this.map && (changes['address'] || changes['mapLink'] || changes['latitude'] || changes['longitude'])) {
       this.updateMap();
     }
   }
@@ -133,8 +134,16 @@ export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnC
       center = [this.latitude, this.longitude];
       zoom = 15;
       this.createMap(center, zoom);
+    } else if (this.mapLink) {
+      // Парсим координаты из ссылки на Яндекс карту
+      const coords = this.parseCoordinatesFromMapLink(this.mapLink);
+      if (coords) {
+        center = [coords.lat, coords.lon];
+        zoom = 15;
+      }
+      this.createMap(center, zoom);
     } else if (this.address) {
-      // Геокодируем адрес
+      // Геокодируем адрес (для обратной совместимости)
       this.geocodeAddress(this.address).then((coords) => {
         if (coords) {
           center = coords;
@@ -159,6 +168,13 @@ export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnC
     if (this.latitude && this.longitude) {
       center = [this.latitude, this.longitude];
       zoom = 15;
+      this.updateMapWithCoords(center, zoom);
+    } else if (this.mapLink) {
+      const coords = this.parseCoordinatesFromMapLink(this.mapLink);
+      if (coords) {
+        center = [coords.lat, coords.lon];
+        zoom = 15;
+      }
       this.updateMapWithCoords(center, zoom);
     } else if (this.address) {
       this.geocodeAddress(this.address).then((coords) => {
@@ -297,6 +313,59 @@ export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnC
         this.onLocationSelect(coords[0], coords[1]);
       }
     }
+  }
+
+  private parseCoordinatesFromMapLink(link: string): { lat: number; lon: number } | null {
+    if (!link) return null;
+
+    try {
+      const url = new URL(link);
+      
+      // Парсим координаты из параметров pt (point) или ll (longitude, latitude)
+      let lat: number | null = null;
+      let lon: number | null = null;
+
+      // Формат: pt=37.573856,55.751574 или pt=55.751574,37.573856
+      const ptParam = url.searchParams.get('pt');
+      if (ptParam) {
+        const parts = ptParam.split(',');
+        if (parts.length === 2) {
+          // В Яндекс картах обычно формат: долгота, широта
+          lon = parseFloat(parts[0]);
+          lat = parseFloat(parts[1]);
+        }
+      }
+
+      // Формат: ll=37.573856,55.751574 (долгота, широта)
+      const llParam = url.searchParams.get('ll');
+      if (llParam) {
+        const parts = llParam.split(',');
+        if (parts.length === 2) {
+          lon = parseFloat(parts[0]);
+          lat = parseFloat(parts[1]);
+        }
+      }
+
+      if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
+        return { lat, lon };
+      }
+    } catch (e) {
+      // Если не удалось распарсить как URL, пробуем найти координаты в строке
+      const coordPattern = /([-+]?[0-9]*\.?[0-9]+),([-+]?[0-9]*\.?[0-9]+)/g;
+      const matches = link.match(coordPattern);
+      if (matches && matches.length > 0) {
+        const parts = matches[0].split(',');
+        if (parts.length === 2) {
+          const lon = parseFloat(parts[0]);
+          const lat = parseFloat(parts[1]);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            return { lat, lon };
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   private geocodeAddress(address: string): Promise<[number, number] | null> {

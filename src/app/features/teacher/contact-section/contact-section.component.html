@@ -15,9 +15,9 @@
 
     <div *ngIf="teacher?.location" class="map-section card">
       <h2>Местоположение</h2>
-      <p class="location-text">{{ teacher?.location }}</p>
-      <app-yandex-map [address]="teacher?.location" [latitude]="teacher?.latitude" [longitude]="teacher?.longitude">
-      </app-yandex-map>
+      <app-address-map mode="view" [address]="teacher!.location!" [latitude]="teacher!.latitude ?? undefined"
+        [longitude]="teacher!.longitude ?? undefined" [mapHeight]="400">
+      </app-address-map>
     </div>
   </div>
 </div>
