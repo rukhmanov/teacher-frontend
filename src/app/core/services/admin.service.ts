@@ -40,3 +40,4 @@ export class AdminService {
     return this.http.delete<void>(`${this.apiUrl}/admin/whitelist/${id}`);
   }
 }
+

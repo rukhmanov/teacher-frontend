@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
@@ -14,7 +14,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-teacher-profile-edit',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, YandexMapComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, YandexMapComponent, RouterOutlet],
   templateUrl: './teacher-profile-edit.component.html',
   styleUrl: './teacher-profile-edit.component.scss',
 })
@@ -29,10 +29,11 @@ export class TeacherProfileEditComponent implements OnInit {
   };
   placeholder = PlaceholderUtil;
 
+  router = inject(Router);
+
   constructor(
     private teachersService: TeachersService,
     private uploadService: UploadService,
-    private router: Router,
     private authService: AuthService,
   ) {}
 
@@ -62,6 +63,18 @@ export class TeacherProfileEditComponent implements OnInit {
         if (err.status === 401) {
           this.authService.logout();
           this.router.navigate(['/']);
+        } else if (err.status === 404) {
+          // Если профиль не найден (404), создаем пустой профиль для редактирования
+          const user = this.authService.getCurrentUser();
+          this.profile = {
+            id: '',
+            userId: user?.id || '',
+            firstName: '',
+            lastName: '',
+            bio: '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
         }
       },
     });
@@ -245,4 +258,10 @@ export class TeacherProfileEditComponent implements OnInit {
       }
     }
   }
+
+  isProfilePage(): boolean {
+    const url = this.router.url;
+    return url.includes('/me/profile') || url === '/me' || url === '/me/';
+  }
 }
+

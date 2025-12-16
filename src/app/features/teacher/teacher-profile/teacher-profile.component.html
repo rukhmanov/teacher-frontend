@@ -9,7 +9,13 @@
             [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event)" />
         </div>
         <div class="profile-details">
-          <h1>{{ teacher.firstName }} {{ teacher.lastName }}</h1>
+          <div class="profile-title-row">
+            <h1>{{ teacher.firstName }} {{ teacher.lastName }}</h1>
+            <button *ngIf="isOwnProfile" class="btn-edit-profile" (click)="goToEditProfile()">
+              <i class="fas fa-edit"></i>
+              <span>Редактировать профиль</span>
+            </button>
+          </div>
           <p *ngIf="teacher.bio" class="bio">{{ teacher.bio }}</p>
         </div>
       </div>

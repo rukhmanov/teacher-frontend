@@ -1,103 +1,143 @@
 <app-header></app-header>
 
-<div class="profile-edit-container" *ngIf="profile">
+<div class="profile-edit-container">
   <div class="container">
-    <h1>Редактирование профиля</h1>
+    <div class="page-header">
+      <h1>Редактирование профиля</h1>
+      <p class="page-subtitle">Управляйте своим профилем и контентом</p>
+    </div>
 
-    <nav class="edit-nav">
-      <button class="nav-btn" [class.active]="activeSection === 'profile'" (click)="activeSection = 'profile'">
-        Профиль
-      </button>
-      <button class="nav-btn" [class.active]="activeSection === 'social'" (click)="activeSection = 'social'">
-        Социальные сети
-      </button>
-      <button class="nav-btn" [class.active]="activeSection === 'location'" (click)="activeSection = 'location'">
-        Местоположение
-      </button>
-    </nav>
+    <div *ngIf="!profile" class="loading-state">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Загрузка профиля...</p>
+    </div>
 
-    <!-- Profile Section -->
-    <div *ngIf="activeSection === 'profile'" class="edit-section card">
-      <h2>Основная информация</h2>
-      <form (ngSubmit)="updateProfile()">
-        <div class="form-group">
-          <label class="form-label">Фото</label>
-          <div class="photo-upload">
-            <img [src]="placeholder.getImageUrl(profile.photoUrl, 'avatar')" alt="Profile photo"
-              class="profile-photo-preview" (error)="onImageError($event)" />
-            <input type="file" accept="image/*" (change)="onPhotoUpload($event)" />
+    <div *ngIf="profile" class="edit-layout">
+      <!-- Навигация по разделам контента -->
+      <nav class="content-nav">
+        <a [routerLink]="['/me', 'profile']" routerLinkActive="active">
+          <i class="fas fa-user-edit"></i> Настройки профиля
+        </a>
+        <a [routerLink]="['/me', 'home']" routerLinkActive="active">
+          <i class="fas fa-home"></i> Главная (Посты)
+        </a>
+        <a [routerLink]="['/me', 'master-classes']" routerLinkActive="active">
+          <i class="fas fa-graduation-cap"></i> Мастер-классы
+        </a>
+        <a [routerLink]="['/me', 'presentations']" routerLinkActive="active">
+          <i class="fas fa-file-powerpoint"></i> Презентации
+        </a>
+        <a [routerLink]="['/me', 'parents']" routerLinkActive="active">
+          <i class="fas fa-users"></i> Для родителей
+        </a>
+        <a [routerLink]="['/me', 'life']" routerLinkActive="active">
+          <i class="fas fa-camera"></i> Жизнь в ДОУ
+        </a>
+        <a [routerLink]="['/me', 'contact']" routerLinkActive="active">
+          <i class="fas fa-phone"></i> Связь со мной
+        </a>
+      </nav>
+
+      <!-- Навигация по настройкам профиля (показывается только на странице профиля) -->
+      <nav class="edit-nav" *ngIf="isProfilePage()">
+        <button class="nav-btn" [class.active]="activeSection === 'profile'" (click)="activeSection = 'profile'">
+          <i class="fas fa-user"></i> Профиль
+        </button>
+        <button class="nav-btn" [class.active]="activeSection === 'social'" (click)="activeSection = 'social'">
+          <i class="fas fa-share-alt"></i> Социальные сети
+        </button>
+        <button class="nav-btn" [class.active]="activeSection === 'location'" (click)="activeSection = 'location'">
+          <i class="fas fa-map-marker-alt"></i> Местоположение
+        </button>
+      </nav>
+
+      <!-- Profile Section (показывается только на странице профиля) -->
+      <div *ngIf="isProfilePage() && profile" class="edit-section card">
+        <h2>Основная информация</h2>
+        <form (ngSubmit)="updateProfile()">
+          <div class="form-group">
+            <label class="form-label">Фото</label>
+            <div class="photo-upload">
+              <img [src]="placeholder.getImageUrl(profile.photoUrl, 'avatar')" alt="Profile photo"
+                class="profile-photo-preview" (error)="onImageError($event)" />
+              <input type="file" accept="image/*" (change)="onPhotoUpload($event)" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Имя</label>
+            <input type="text" class="form-control" [(ngModel)]="profile.firstName" name="firstName" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Фамилия</label>
+            <input type="text" class="form-control" [(ngModel)]="profile.lastName" name="lastName" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">О себе</label>
+            <textarea class="form-control" [(ngModel)]="profile.bio" name="bio" rows="5"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+      </div>
+
+      <!-- Social Links Section -->
+      <div *ngIf="activeSection === 'social' && isProfilePage() && profile" class="edit-section card">
+        <h2>Социальные сети</h2>
+        <form (ngSubmit)="addSocialLink()" class="add-link-form">
+          <div class="form-group">
+            <label class="form-label">Платформа</label>
+            <select class="form-control" [(ngModel)]="newSocialLink.platform" name="platform">
+              <option *ngFor="let platform of socialPlatforms" [value]="platform">
+                {{ getPlatformName(platform) }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">URL</label>
+            <input type="text" class="form-control" [(ngModel)]="newSocialLink.url" name="url" required
+              [placeholder]="newSocialLink.platform === 'TELEGRAM' ? 'AleksRukhman или @AleksRukhman' : 'https://example.com'" />
+            <small *ngIf="newSocialLink.platform === 'TELEGRAM'" class="form-hint">
+              Можно ввести просто username (например: AleksRukhman или &#64;AleksRukhman)
+            </small>
+          </div>
+          <button type="submit" class="btn btn-primary">Добавить</button>
+        </form>
+
+        <div class="social-links-list">
+          <div *ngFor="let link of socialLinks" class="social-link-item">
+            <span class="platform">{{ getPlatformName(link.platform) }}</span>
+            <a [href]="link.url" target="_blank">{{ link.url }}</a>
+            <button class="btn btn-secondary" (click)="deleteSocialLink(link.id)">
+              Удалить
+            </button>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Имя</label>
-          <input type="text" class="form-control" [(ngModel)]="profile.firstName" name="firstName" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Фамилия</label>
-          <input type="text" class="form-control" [(ngModel)]="profile.lastName" name="lastName" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">О себе</label>
-          <textarea class="form-control" [(ngModel)]="profile.bio" name="bio" rows="5"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-      </form>
-    </div>
+      </div>
 
-    <!-- Social Links Section -->
-    <div *ngIf="activeSection === 'social'" class="edit-section card">
-      <h2>Социальные сети</h2>
-      <form (ngSubmit)="addSocialLink()" class="add-link-form">
-        <div class="form-group">
-          <label class="form-label">Платформа</label>
-          <select class="form-control" [(ngModel)]="newSocialLink.platform" name="platform">
-            <option *ngFor="let platform of socialPlatforms" [value]="platform">
-              {{ getPlatformName(platform) }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">URL</label>
-          <input type="text" class="form-control" [(ngModel)]="newSocialLink.url" name="url" required
-            [placeholder]="newSocialLink.platform === 'TELEGRAM' ? 'AleksRukhman или @AleksRukhman' : 'https://example.com'" />
-          <small *ngIf="newSocialLink.platform === 'TELEGRAM'" class="form-hint">
-            Можно ввести просто username (например: AleksRukhman или &#64;AleksRukhman)
-          </small>
-        </div>
-        <button type="submit" class="btn btn-primary">Добавить</button>
-      </form>
+      <!-- Location Section -->
+      <div *ngIf="activeSection === 'location' && isProfilePage() && profile" class="edit-section card">
+        <h2>Местоположение</h2>
+        <form (ngSubmit)="updateProfile()">
+          <div class="form-group">
+            <label class="form-label">Адрес</label>
+            <input type="text" class="form-control" [(ngModel)]="profile.location" name="location"
+              placeholder="Введите адрес" />
+          </div>
+          <div *ngIf="profile && profile.location" class="map-preview">
+            <app-yandex-map [address]="profile.location" [latitude]="profile.latitude" [longitude]="profile.longitude"
+              [editable]="true" [onLocationSelect]="onMapLocationSelect">
+            </app-yandex-map>
+            <small class="map-hint">Кликните на карте, чтобы выбрать точное местоположение</small>
+          </div>
+          <div *ngIf="!profile?.location" class="map-placeholder">
+            <p>Введите адрес, чтобы увидеть карту</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+      </div>
 
-      <div class="social-links-list">
-        <div *ngFor="let link of socialLinks" class="social-link-item">
-          <span class="platform">{{ getPlatformName(link.platform) }}</span>
-          <a [href]="link.url" target="_blank">{{ link.url }}</a>
-          <button class="btn btn-secondary" (click)="deleteSocialLink(link.id)">
-            Удалить
-          </button>
-        </div>
+      <!-- Контент из дочерних роутов (посты, мастер-классы и т.д.) -->
+      <div class="content-outlet" *ngIf="!isProfilePage()">
+        <router-outlet></router-outlet>
       </div>
     </div>
-
-    <!-- Location Section -->
-    <div *ngIf="activeSection === 'location'" class="edit-section card">
-      <h2>Местоположение</h2>
-      <form (ngSubmit)="updateProfile()">
-        <div class="form-group">
-          <label class="form-label">Адрес</label>
-          <input type="text" class="form-control" [(ngModel)]="profile.location" name="location"
-            placeholder="Введите адрес" />
-        </div>
-        <div *ngIf="profile && profile.location" class="map-preview">
-          <app-yandex-map [address]="profile.location" [latitude]="profile.latitude" [longitude]="profile.longitude"
-            [editable]="true" [onLocationSelect]="onMapLocationSelect">
-          </app-yandex-map>
-          <small class="map-hint">Кликните на карте, чтобы выбрать точное местоположение</small>
-        </div>
-        <div *ngIf="!profile?.location" class="map-placeholder">
-          <p>Введите адрес, чтобы увидеть карту</p>
-        </div>
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-      </form>
-    </div>
   </div>
-</div>

@@ -112,3 +112,4 @@ export class ContactSectionComponent implements OnInit {
     return link.url;
   }
 }
+

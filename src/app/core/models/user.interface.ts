@@ -29,3 +29,4 @@ export interface RegisterRequest {
 export interface RegisterFormData extends RegisterRequest {
   confirmPassword: string;
 }
+

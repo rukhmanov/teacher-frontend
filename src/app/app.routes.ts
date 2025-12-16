@@ -67,13 +67,23 @@ export const routes: Routes = [
   {
     path: 'me',
     canActivate: [authGuard],
+    loadComponent: () =>
+      import(
+        './features/teacher/teacher-profile-edit/teacher-profile-edit.component'
+      ).then((m) => m.TeacherProfileEditComponent),
     children: [
       {
+        path: '',
+        redirectTo: 'profile',
+        pathMatch: 'full',
+      },
+      {
         path: 'profile',
+        // Профиль редактируется в родительском компоненте, поэтому используем пустой компонент
         loadComponent: () =>
-          import(
-            './features/teacher/teacher-profile-edit/teacher-profile-edit.component'
-          ).then((m) => m.TeacherProfileEditComponent),
+          import('./shared/components/empty-route/empty-route.component').then(
+            (m) => m.EmptyRouteComponent,
+          ),
       },
       {
         path: 'home',

@@ -19,8 +19,10 @@
         <nav class="nav" [class.menu-open]="isMenuOpen">
           <a routerLink="/" routerLinkActive="active">Главная</a>
           <ng-container *ngIf="currentUser">
-            <a *ngIf="currentUser.role === 'TEACHER'" [routerLink]="['/me/profile']" routerLinkActive="active">
-              Мой профиль
+            <a *ngIf="currentUser.role === 'TEACHER'" [routerLink]="['/me/profile']" routerLinkActive="active"
+              class="btn-my-profile">
+              <i class="fas fa-user-edit"></i>
+              <span>Редактировать профиль</span>
             </a>
             <a *ngIf="currentUser.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active">
               Админ панель

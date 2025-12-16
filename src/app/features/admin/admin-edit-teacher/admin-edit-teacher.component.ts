@@ -41,3 +41,4 @@ export class AdminEditTeacherComponent implements OnInit {
     this.router.navigate(['/admin/teachers']);
   }
 }
+

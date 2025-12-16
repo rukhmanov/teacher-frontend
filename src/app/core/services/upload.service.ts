@@ -23,3 +23,4 @@ export class UploadService {
     return this.http.post<{ url: string }>(`${this.apiUrl}/upload/file`, formData);
   }
 }
+

@@ -96,3 +96,4 @@ export interface WhitelistEmail {
   addedBy?: string;
   createdAt: Date;
 }
+
