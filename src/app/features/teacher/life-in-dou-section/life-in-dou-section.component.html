@@ -1,7 +1,8 @@
 <div class="life-in-dou-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn btn-primary" (click)="showForm = !showForm">
-      {{ showForm ? 'Отменить' : 'Добавить элемент' }}
+    <button class="btn-create" (click)="showForm = !showForm">
+      <i class="fas fa-camera"></i>
+      <span>{{ showForm ? 'Отменить' : 'Добавить фото/видео' }}</span>
     </button>
   </div>
 
@@ -25,13 +26,23 @@
         <img *ngFor="let photo of item.photos" [src]="placeholder.getImageUrl(photo, 'gallery')" alt="Photo"
           (error)="onImageError($event)" />
       </div>
-      <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deleteItem(item.id)">
-        Удалить
-      </button>
+      <div *ngIf="isEditMode" class="actions">
+        <button class="btn btn-secondary" (click)="deleteItem(item.id)">
+          <i class="fas fa-trash"></i> Удалить
+        </button>
+      </div>
     </div>
 
     <div *ngIf="lifeInDOU.length === 0" class="no-items">
-      <p>Пока нет элементов</p>
+      <div class="empty-state">
+        <i class="fas fa-camera"></i>
+        <h3>Жизнь в ДОУ</h3>
+        <p *ngIf="isEditMode">Добавьте фото и видео из жизни детского сада!</p>
+        <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
+          <i class="fas fa-plus"></i> Добавить фото/видео
+        </button>
+      </div>
     </div>
   </div>
 </div>

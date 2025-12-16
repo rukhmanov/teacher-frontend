@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { UploadService } from '../../../core/services/upload.service';
 import { Post, TeacherProfile } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
@@ -30,11 +32,15 @@ export class HomeSectionComponent implements OnInit {
   // Утилита для заглушек
   placeholder = PlaceholderUtil;
 
+  selectedImages: File[] = [];
+  imagePreviews: string[] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private teachersService: TeachersService,
     private authService: AuthService,
+    private uploadService: UploadService,
   ) {}
 
   ngOnInit() {
@@ -130,12 +136,62 @@ export class HomeSectionComponent implements OnInit {
     });
   }
 
+  onImageSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      this.selectedImages = Array.from(input.files);
+      this.imagePreviews = [];
+      this.selectedImages.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            this.imagePreviews.push(e.target.result as string);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  removeImage(index: number) {
+    this.selectedImages.splice(index, 1);
+    this.imagePreviews.splice(index, 1);
+  }
+
   createPost() {
+    if (this.selectedImages.length > 0) {
+      // Загружаем изображения
+      const uploadObservables = this.selectedImages.map(file => 
+        this.uploadService.uploadImage(file)
+      );
+      
+      // Используем forkJoin для параллельной загрузки
+      forkJoin(uploadObservables).subscribe({
+        next: (results) => {
+          this.newPost.images = results.map(r => r.url);
+          this.submitPost();
+        },
+        error: (err) => {
+          console.error('Error uploading images:', err);
+          this.submitPost();
+        }
+      });
+    } else {
+      this.submitPost();
+    }
+  }
+
+  private submitPost() {
     this.teachersService.createPost(this.newPost).subscribe({
       next: () => {
         this.loadOwnPosts();
         this.showPostForm = false;
         this.newPost = { title: '', content: '', images: [], videos: [] };
+        this.selectedImages = [];
+        this.imagePreviews = [];
+      },
+      error: (err) => {
+        console.error('Error creating post:', err);
       },
     });
   }

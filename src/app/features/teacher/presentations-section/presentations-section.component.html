@@ -1,7 +1,8 @@
 <div class="presentations-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn btn-primary" (click)="showForm = !showForm">
-      {{ showForm ? 'Отменить' : 'Добавить презентацию' }}
+    <button class="btn-create" (click)="showForm = !showForm">
+      <i class="fas fa-file-powerpoint"></i>
+      <span>{{ showForm ? 'Отменить' : 'Добавить презентацию' }}</span>
     </button>
   </div>
 
@@ -26,7 +27,7 @@
       <h3>{{ presentation.title }}</h3>
       <p *ngIf="presentation.description">{{ presentation.description }}</p>
       <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
-        Скачать
+        <i class="fas fa-download"></i> Скачать
       </a>
       <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePresentation(presentation.id)">
         Удалить
@@ -34,7 +35,15 @@
     </div>
 
     <div *ngIf="presentations.length === 0" class="no-items">
-      <p>Пока нет презентаций</p>
+      <div class="empty-state">
+        <i class="fas fa-file-powerpoint"></i>
+        <h3>Презентации отсутствуют</h3>
+        <p *ngIf="isEditMode">Добавьте свою первую презентацию, чтобы поделиться разработками!</p>
+        <p *ngIf="!isEditMode">Здесь будут появляться презентации педагога</p>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
+          <i class="fas fa-plus"></i> Добавить презентацию
+        </button>
+      </div>
     </div>
   </div>
 </div>

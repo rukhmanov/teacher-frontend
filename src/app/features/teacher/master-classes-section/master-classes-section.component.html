@@ -1,7 +1,8 @@
 <div class="master-classes-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn btn-primary" (click)="showForm = !showForm">
-      {{ showForm ? 'Отменить' : 'Добавить мастер-класс' }}
+    <button class="btn-create" (click)="showForm = !showForm">
+      <i class="fas fa-graduation-cap"></i>
+      <span>{{ showForm ? 'Отменить' : 'Добавить мастер-класс' }}</span>
     </button>
   </div>
 
@@ -38,7 +39,15 @@
     </div>
 
     <div *ngIf="masterClasses.length === 0" class="no-items">
-      <p>Пока нет мастер-классов</p>
+      <div class="empty-state">
+        <i class="fas fa-graduation-cap"></i>
+        <h3>Копилка мастер-классов пуста</h3>
+        <p *ngIf="isEditMode">Добавьте свой первый мастер-класс, чтобы поделиться опытом!</p>
+        <p *ngIf="!isEditMode">Здесь будут появляться мастер-классы педагога</p>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
+          <i class="fas fa-plus"></i> Добавить мастер-класс
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -1,7 +1,8 @@
 <div class="parent-section">
   <div *ngIf="isEditMode" class="section-actions">
-    <button class="btn btn-primary" (click)="showForm = !showForm">
-      {{ showForm ? 'Отменить' : 'Добавить раздел' }}
+    <button class="btn-create" (click)="showForm = !showForm">
+      <i class="fas fa-users"></i>
+      <span>{{ showForm ? 'Отменить' : 'Добавить раздел для родителей' }}</span>
     </button>
   </div>
 
@@ -27,7 +28,15 @@
     </div>
 
     <div *ngIf="sections.length === 0" class="no-items">
-      <p>Пока нет разделов</p>
+      <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <h3>Раздел для родителей пуст</h3>
+        <p *ngIf="isEditMode">Добавьте полезную информацию для родителей!</p>
+        <p *ngIf="!isEditMode">Здесь будет информация для родителей</p>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
+          <i class="fas fa-plus"></i> Добавить раздел
+        </button>
+      </div>
     </div>
   </div>
 </div>

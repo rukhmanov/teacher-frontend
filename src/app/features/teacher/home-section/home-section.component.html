@@ -13,20 +13,53 @@
 
     <main class="main-content">
       <div *ngIf="isEditMode" class="post-form-section">
-        <button class="btn btn-primary" (click)="showPostForm = !showPostForm">
-          {{ showPostForm ? 'Отменить' : 'Создать пост' }}
+        <button class="btn-create-post" (click)="showPostForm = !showPostForm">
+          <i class="fas fa-plus-circle"></i>
+          <span>{{ showPostForm ? 'Отменить' : 'Создать новый пост' }}</span>
         </button>
 
         <form *ngIf="showPostForm" class="post-form card" (ngSubmit)="createPost()">
           <div class="form-group">
-            <label class="form-label">Заголовок</label>
-            <input type="text" class="form-control" [(ngModel)]="newPost.title" name="title" required />
+            <label class="form-label">
+              <i class="fas fa-heading"></i> Заголовок
+            </label>
+            <input type="text" class="form-control" [(ngModel)]="newPost.title" name="title"
+              placeholder="О чем ваш пост?" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Содержание</label>
-            <textarea class="form-control" [(ngModel)]="newPost.content" name="content" required></textarea>
+            <label class="form-label">
+              <i class="fas fa-align-left"></i> Содержание
+            </label>
+            <textarea class="form-control" [(ngModel)]="newPost.content" name="content" rows="6"
+              placeholder="Поделитесь своими мыслями..." required></textarea>
           </div>
-          <button type="submit" class="btn btn-primary">Опубликовать</button>
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-images"></i> Изображения
+            </label>
+            <div class="image-upload-area">
+              <input type="file" #imageInput class="file-input" accept="image/*" multiple
+                (change)="onImageSelect($event)" />
+              <button type="button" class="btn-upload" (click)="imageInput.click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Выбрать изображения</span>
+              </button>
+              <div *ngIf="imagePreviews.length > 0" class="image-previews">
+                <div *ngFor="let preview of imagePreviews; let i = index" class="image-preview">
+                  <img [src]="preview" alt="Preview" />
+                  <button type="button" class="btn-remove-image" (click)="removeImage(i)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-publish">
+              <i class="fas fa-paper-plane"></i>
+              <span>Опубликовать</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -53,7 +86,15 @@
         </div>
 
         <div *ngIf="posts.length === 0" class="no-posts">
-          <p>Пока нет постов</p>
+          <div class="empty-state">
+            <i class="fas fa-newspaper"></i>
+            <h3>Пока нет постов</h3>
+            <p *ngIf="isEditMode">Создайте первый пост, чтобы поделиться новостями и мыслями!</p>
+            <p *ngIf="!isEditMode">Здесь будут появляться посты педагога</p>
+            <button *ngIf="isEditMode" class="btn btn-primary" (click)="showPostForm = true">
+              <i class="fas fa-plus"></i> Создать первый пост
+            </button>
+          </div>
         </div>
       </div>
     </main>
