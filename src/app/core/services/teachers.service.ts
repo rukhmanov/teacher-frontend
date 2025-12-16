@@ -41,6 +41,10 @@ export class TeachersService {
     );
   }
 
+  deleteProfile(): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/teachers/me/profile`);
+  }
+
   // Posts
   getPosts(username: string): Observable<Post[]>;
   getPosts(teacherId?: string): Observable<Post[]>;

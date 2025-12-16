@@ -231,5 +231,31 @@ export class TeacherProfileEditComponent implements OnInit {
     const url = this.router.url;
     return url.includes('/me/profile') || url === '/me' || url === '/me/';
   }
+
+  deleteProfile() {
+    const confirmed = confirm(
+      'Вы уверены, что хотите удалить свой профиль? Это действие нельзя отменить. Все ваши данные (посты, мастер-классы, презентации и т.д.) будут безвозвратно удалены.'
+    );
+    
+    if (confirmed) {
+      const doubleConfirm = confirm(
+        'Это последнее предупреждение! Вы действительно хотите удалить свой профиль?'
+      );
+      
+      if (doubleConfirm) {
+        this.teachersService.deleteProfile().subscribe({
+          next: () => {
+            alert('Профиль успешно удален');
+            this.authService.logout();
+            this.router.navigate(['/']);
+          },
+          error: (err) => {
+            console.error('Error deleting profile:', err);
+            alert('Произошла ошибка при удалении профиля');
+          },
+        });
+      }
+    }
+  }
 }
 

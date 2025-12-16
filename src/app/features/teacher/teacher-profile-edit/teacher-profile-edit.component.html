@@ -74,6 +74,15 @@
           </div>
           <button type="submit" class="btn btn-primary">Сохранить</button>
         </form>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+          <h3>Опасная зона</h3>
+          <p class="danger-warning">Удаление профиля необратимо. Все ваши данные будут безвозвратно удалены.</p>
+          <button type="button" class="btn btn-danger" (click)="deleteProfile()">
+            <i class="fas fa-trash-alt"></i> Удалить профиль
+          </button>
+        </div>
       </div>
 
       <!-- Social Links Section -->

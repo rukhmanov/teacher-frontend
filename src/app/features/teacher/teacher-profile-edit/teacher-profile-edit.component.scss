@@ -206,3 +206,47 @@
   font-style: italic;
 }
 
+.danger-zone {
+  margin-top: 3rem;
+  padding: 2rem;
+  border: 2px solid #dc3545;
+  border-radius: 8px;
+  background: rgba(220, 53, 69, 0.05);
+
+  h3 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .danger-warning {
+    color: #721c24;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #c82333;
+    }
+
+    &:active {
+      background-color: #bd2130;
+    }
+
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
