@@ -188,3 +188,4 @@ export class LifeInDOUSectionComponent implements OnInit {
     return PlaceholderUtil.getImageUrl(url, 'gallery');
   }
 }
+

@@ -70,3 +70,4 @@ export class ImageCarouselComponent implements OnInit, OnDestroy {
     this.isFullscreen = !this.isFullscreen;
   }
 }
+
