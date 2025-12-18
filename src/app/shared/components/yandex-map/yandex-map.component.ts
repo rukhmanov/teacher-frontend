@@ -393,3 +393,4 @@ export class YandexMapComponent implements OnInit, AfterViewInit, OnDestroy, OnC
 }
 
 
+
