@@ -32,6 +32,9 @@ export class CertificatesSectionComponent implements OnInit {
   selectedCertificate: Publication | null = null;
   showViewerModal: boolean = false;
   viewerCertificate: Publication | null = null;
+  
+  // Состояние развернутости карточек
+  expandedCards: Set<string> = new Set();
 
   constructor(
     private route: ActivatedRoute,
@@ -199,13 +202,22 @@ export class CertificatesSectionComponent implements OnInit {
     }
   }
 
-  getTruncatedDescription(description: string | undefined): string {
-    if (!description) return '';
-    return description.length > 200 ? description.substring(0, 200) + '...' : description;
+  isCardExpanded(certificateId: string): boolean {
+    return this.expandedCards.has(certificateId);
   }
 
-  shouldShowFullButton(certificate: Publication): boolean {
-    return !!(certificate.description && certificate.description.length > 200);
+  toggleCardExpansion(certificateId: string): void {
+    if (this.expandedCards.has(certificateId)) {
+      this.expandedCards.delete(certificateId);
+    } else {
+      this.expandedCards.add(certificateId);
+    }
+  }
+
+  shouldShowExpandButton(certificate: Publication): boolean {
+    if (!certificate.description) return false;
+    // Проверяем, что текст достаточно длинный для обрезки (примерно 150+ символов)
+    return certificate.description.length > 150;
   }
 
   openModal(certificate: Publication): void {
@@ -260,8 +272,16 @@ export class CertificatesSectionComponent implements OnInit {
     const url = fileUrl.toLowerCase();
     let viewerUrl: string | null = null;
     
+    // Для изображений возвращаем прямой URL
+    if (this.isImageFile(fileUrl)) {
+      viewerUrl = fileUrl;
+    }
+    // Для Word документов используем Office Online Viewer
+    else if (url.endsWith('.doc') || url.endsWith('.docx')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
     // Для PPTX/PPT используем Office Online Viewer
-    if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
+    else if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
       viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
     }
     // Для PDF используем Google Docs Viewer
@@ -276,8 +296,23 @@ export class CertificatesSectionComponent implements OnInit {
     return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
   }
 
+  isImageFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || 
+           url.endsWith('.gif') || url.endsWith('.webp') || url.endsWith('.bmp') || 
+           url.endsWith('.svg');
+  }
+
   canViewInBrowser(fileUrl: string): boolean {
-    return this.getViewerUrl(fileUrl) !== null;
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    // Поддерживаем изображения, Word документы, PDF, PPTX/PPT, ODP
+    return this.isImageFile(fileUrl) || 
+           url.endsWith('.doc') || url.endsWith('.docx') || 
+           url.endsWith('.pdf') || 
+           url.endsWith('.pptx') || url.endsWith('.ppt') || 
+           url.endsWith('.odp');
   }
 
   openInBrowser(certificate: Publication): void {

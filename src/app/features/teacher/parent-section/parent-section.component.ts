@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
@@ -30,11 +31,18 @@ export class ParentSectionComponent implements OnInit {
   // Модальное окно
   showModal: boolean = false;
   selectedSection: ParentSection | null = null;
+  showViewerModal: boolean = false;
+  viewerFile: string | null = null;
+  viewerFileName: string = '';
+  
+  // Состояние развернутости карточек
+  expandedCards: Set<string> = new Set();
 
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
     private uploadService: UploadService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit() {
@@ -188,17 +196,24 @@ export class ParentSectionComponent implements OnInit {
     }
   }
 
-  getTruncatedContent(content: string | undefined): string {
-    if (!content) return '';
-    // Убираем HTML теги для подсчета длины
-    const textContent = content.replace(/<[^>]*>/g, '');
-    return textContent.length > 200 ? textContent.substring(0, 200) + '...' : content;
+  isCardExpanded(sectionId: string): boolean {
+    return this.expandedCards.has(sectionId);
   }
 
-  shouldShowFullButton(section: ParentSection): boolean {
+  toggleCardExpansion(sectionId: string): void {
+    if (this.expandedCards.has(sectionId)) {
+      this.expandedCards.delete(sectionId);
+    } else {
+      this.expandedCards.add(sectionId);
+    }
+  }
+
+  shouldShowExpandButton(section: ParentSection): boolean {
     if (!section.content) return false;
+    // Убираем HTML теги для подсчета длины
     const textContent = section.content.replace(/<[^>]*>/g, '');
-    return textContent.length > 200;
+    // Проверяем, что текст достаточно длинный для обрезки (примерно 150+ символов)
+    return textContent.length > 150;
   }
 
   openModal(section: ParentSection): void {
@@ -227,6 +242,69 @@ export class ParentSectionComponent implements OnInit {
     if (url.endsWith('.xls') || url.endsWith('.xlsx')) return 'fa-file-excel';
     if (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.gif')) return 'fa-file-image';
     return 'fa-file';
+  }
+
+  isImageFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || 
+           url.endsWith('.gif') || url.endsWith('.webp') || url.endsWith('.bmp') || 
+           url.endsWith('.svg');
+  }
+
+  getViewerUrl(fileUrl: string): SafeResourceUrl | null {
+    if (!fileUrl) return null;
+    
+    const url = fileUrl.toLowerCase();
+    let viewerUrl: string | null = null;
+    
+    // Для изображений возвращаем прямой URL
+    if (this.isImageFile(fileUrl)) {
+      viewerUrl = fileUrl;
+    }
+    // Для Word документов используем Office Online Viewer
+    else if (url.endsWith('.doc') || url.endsWith('.docx')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PPTX/PPT используем Office Online Viewer
+    else if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PDF используем Google Docs Viewer
+    else if (url.endsWith('.pdf')) {
+      viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    }
+    // Для ODP используем Google Docs Viewer
+    else if (url.endsWith('.odp')) {
+      viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    }
+    
+    return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
+  }
+
+  canViewInBrowser(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    // Поддерживаем изображения, Word документы, PDF, PPTX/PPT, ODP
+    return this.isImageFile(fileUrl) || 
+           url.endsWith('.doc') || url.endsWith('.docx') || 
+           url.endsWith('.pdf') || 
+           url.endsWith('.pptx') || url.endsWith('.ppt') || 
+           url.endsWith('.odp');
+  }
+
+  openViewerModal(fileUrl: string): void {
+    this.viewerFile = fileUrl;
+    this.viewerFileName = this.getFileName(fileUrl);
+    this.showViewerModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeViewerModal(): void {
+    this.showViewerModal = false;
+    this.viewerFile = null;
+    this.viewerFileName = '';
+    document.body.style.overflow = '';
   }
 }
 

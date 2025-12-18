@@ -72,19 +72,26 @@
     <div *ngFor="let section of sections" class="section-card card"
       [style.background-color]="section.cardColor || null">
       <h3>{{ section.title }}</h3>
-      <div class="content" [innerHTML]="getTruncatedContent(section.content)"></div>
+      <div class="content" [class.expanded]="isCardExpanded(section.id!)" [innerHTML]="section.content"></div>
       <div *ngIf="section.files && section.files.length > 0" class="section-files">
         <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ section.files.length }}):</p>
         <div class="files-list">
-          <a *ngFor="let file of section.files" [href]="file" target="_blank" class="file-link">
-            <i class="fas" [ngClass]="getFileIcon(file)"></i>
-            <span>{{ getFileName(file) }}</span>
-          </a>
+          <div *ngFor="let file of section.files" class="file-item-wrapper">
+            <a [href]="file" target="_blank" class="file-link">
+              <i class="fas" [ngClass]="getFileIcon(file)"></i>
+              <span>{{ getFileName(file) }}</span>
+            </a>
+            <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModal(file)" title="Просмотреть">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-footer">
-        <button *ngIf="shouldShowFullButton(section)" class="btn-expand" (click)="openModal(section)">
-          <i class="fas fa-expand"></i> Показать все
+        <button *ngIf="shouldShowExpandButton(section)" class="btn-expand" (click)="toggleCardExpansion(section.id!)">
+          <i class="fas" [class.fa-chevron-down]="!isCardExpanded(section.id!)"
+            [class.fa-chevron-up]="isCardExpanded(section.id!)"></i>
+          {{ isCardExpanded(section.id!) ? 'Свернуть' : 'Смотреть все' }}
         </button>
         <div *ngIf="isEditMode" class="section-actions-buttons">
           <button class="btn btn-primary" (click)="editSection(section)">
@@ -124,12 +131,45 @@
         <div *ngIf="selectedSection.files && selectedSection.files.length > 0" class="modal-files">
           <h4><i class="fas fa-paperclip"></i> Файлы ({{ selectedSection.files.length }}):</h4>
           <div class="files-list">
-            <a *ngFor="let file of selectedSection.files" [href]="file" target="_blank" class="file-link">
-              <i class="fas" [ngClass]="getFileIcon(file)"></i>
-              <span>{{ getFileName(file) }}</span>
-              <i class="fas fa-external-link-alt"></i>
-            </a>
+            <div *ngFor="let file of selectedSection.files" class="file-item-wrapper">
+              <a [href]="file" target="_blank" class="file-link">
+                <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                <span>{{ getFileName(file) }}</span>
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+              <button *ngIf="canViewInBrowser(file)" class="btn btn-primary btn-view" (click)="openViewerModal(file)"
+                title="Просмотреть">
+                <i class="fas fa-eye"></i> Просмотреть
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для просмотра файлов -->
+  <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerFile">
+      <div class="viewer-modal-header">
+        <h2>{{ viewerFileName }}</h2>
+        <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="viewer-modal-body">
+        <!-- Для изображений используем img -->
+        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="viewerFile" [alt]="viewerFileName"
+          class="viewer-image" />
+        <!-- Для других файлов используем iframe -->
+        <iframe *ngIf="getViewerUrl(viewerFile) && !isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
+          class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        <div *ngIf="!getViewerUrl(viewerFile)" class="viewer-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
+          <a [href]="viewerFile" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i> Скачать файл
+          </a>
         </div>
       </div>
     </div>

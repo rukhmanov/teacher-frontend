@@ -76,10 +76,15 @@
           [src]="getPreviewUrl(publication.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
       </div>
       <h3>{{ publication.title }}</h3>
-      <p *ngIf="publication.description">{{ getTruncatedDescription(publication.description) }}</p>
+      <p *ngIf="publication.description" [class.expanded]="isCardExpanded(publication.id!)" class="description-text">
+        {{ publication.description }}
+      </p>
       <div class="card-footer">
-        <button *ngIf="shouldShowFullButton(publication)" class="btn-expand" (click)="openModal(publication)">
-          <i class="fas fa-expand"></i> Показать все
+        <button *ngIf="shouldShowExpandButton(publication)" class="btn-expand"
+          (click)="toggleCardExpansion(publication.id!)">
+          <i class="fas" [class.fa-chevron-down]="!isCardExpanded(publication.id!)"
+            [class.fa-chevron-up]="isCardExpanded(publication.id!)"></i>
+          {{ isCardExpanded(publication.id!) ? 'Свернуть' : 'Смотреть все' }}
         </button>
         <div class="publication-actions">
           <button *ngIf="canViewInBrowser(publication.fileUrl)" class="btn btn-primary"
@@ -155,13 +160,23 @@
     <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerPublication">
       <div class="viewer-modal-header">
         <h2>{{ viewerPublication.title }}</h2>
-        <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
-          <i class="fas fa-times"></i>
-        </button>
+        <div class="viewer-header-actions">
+          <a [href]="viewerPublication.fileUrl" target="_blank" download class="btn-download" title="Скачать файл">
+            <i class="fas fa-download"></i>
+          </a>
+          <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
       <div class="viewer-modal-body">
-        <iframe *ngIf="getViewerUrl(viewerPublication.fileUrl)" [src]="getViewerUrl(viewerPublication.fileUrl)!"
-          class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        <!-- Для изображений используем img -->
+        <img *ngIf="getViewerUrl(viewerPublication.fileUrl) && isImageFile(viewerPublication.fileUrl)"
+          [src]="viewerPublication.fileUrl" [alt]="viewerPublication.title" class="viewer-image" />
+        <!-- Для других файлов используем iframe -->
+        <iframe *ngIf="getViewerUrl(viewerPublication.fileUrl) && !isImageFile(viewerPublication.fileUrl)"
+          [src]="getViewerUrl(viewerPublication.fileUrl)!" class="viewer-iframe" frameborder="0"
+          allowfullscreen></iframe>
         <div *ngIf="!getViewerUrl(viewerPublication.fileUrl)" class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>

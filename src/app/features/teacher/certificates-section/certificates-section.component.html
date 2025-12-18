@@ -76,10 +76,15 @@
           [src]="getPreviewUrl(certificate.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
       </div>
       <h3>{{ certificate.title }}</h3>
-      <p *ngIf="certificate.description">{{ getTruncatedDescription(certificate.description) }}</p>
+      <p *ngIf="certificate.description" [class.expanded]="isCardExpanded(certificate.id!)" class="description-text">
+        {{ certificate.description }}
+      </p>
       <div class="card-footer">
-        <button *ngIf="shouldShowFullButton(certificate)" class="btn-expand" (click)="openModal(certificate)">
-          <i class="fas fa-expand"></i> Показать все
+        <button *ngIf="shouldShowExpandButton(certificate)" class="btn-expand"
+          (click)="toggleCardExpansion(certificate.id!)">
+          <i class="fas" [class.fa-chevron-down]="!isCardExpanded(certificate.id!)"
+            [class.fa-chevron-up]="isCardExpanded(certificate.id!)"></i>
+          {{ isCardExpanded(certificate.id!) ? 'Свернуть' : 'Смотреть все' }}
         </button>
         <div class="certificate-actions">
           <button *ngIf="canViewInBrowser(certificate.fileUrl)" class="btn btn-primary"
@@ -160,8 +165,13 @@
         </button>
       </div>
       <div class="viewer-modal-body">
-        <iframe *ngIf="getViewerUrl(viewerCertificate.fileUrl)" [src]="getViewerUrl(viewerCertificate.fileUrl)!"
-          class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        <!-- Для изображений используем img -->
+        <img *ngIf="getViewerUrl(viewerCertificate.fileUrl) && isImageFile(viewerCertificate.fileUrl)"
+          [src]="viewerCertificate.fileUrl" [alt]="viewerCertificate.title" class="viewer-image" />
+        <!-- Для других файлов используем iframe -->
+        <iframe *ngIf="getViewerUrl(viewerCertificate.fileUrl) && !isImageFile(viewerCertificate.fileUrl)"
+          [src]="getViewerUrl(viewerCertificate.fileUrl)!" class="viewer-iframe" frameborder="0"
+          allowfullscreen></iframe>
         <div *ngIf="!getViewerUrl(viewerCertificate.fileUrl)" class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
