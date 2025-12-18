@@ -319,6 +319,18 @@ export class TeachersService {
   deleteFolder(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/teachers/me/folders/${id}`);
   }
+
+  moveMedia(
+    mediaItem: MediaItem,
+    sourceFolderId: string | null,
+    targetFolderId: string | null,
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/teachers/me/life/move-media`, {
+      ...mediaItem,
+      sourceFolderId: sourceFolderId || null,
+      targetFolderId: targetFolderId || null,
+    });
+  }
 }
 
 

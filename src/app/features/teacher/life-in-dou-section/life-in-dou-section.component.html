@@ -1,4 +1,4 @@
-<div class="life-in-dou-section">
+<div class="life-in-dou-section" (click)="closeAllMoveMenus()">
   <div *ngIf="isEditMode" class="upload-section">
     <div class="upload-area card">
       <h3>
@@ -91,10 +91,26 @@
                 <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls
                   (error)="onImageError($event)"></video>
                 <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
-                <button *ngIf="isEditMode" class="btn-delete-media"
-                  (click)="deleteMediaFromFolder(folder.id, mediaItem.url)" title="Удалить">
-                  <i class="fas fa-times"></i>
-                </button>
+                <div *ngIf="isEditMode" class="media-actions" (click)="$event.stopPropagation()">
+                  <button class="btn-move-media" (click)="toggleMoveMenu(mediaItem.url, $event)" title="Переместить">
+                    <i class="fas fa-folder-open"></i>
+                  </button>
+                  <button class="btn-delete-media" (click)="deleteMediaFromFolder(folder.id, mediaItem.url)"
+                    title="Удалить">
+                    <i class="fas fa-times"></i>
+                  </button>
+                  <div *ngIf="showMoveMenu[mediaItem.url]" class="move-menu" (click)="$event.stopPropagation()">
+                    <div class="move-menu-item" (click)="onMoveMedia(mediaItem, folder.id, null, $event)">
+                      <i class="fas fa-home"></i> Основной раздел
+                    </div>
+                    <ng-container *ngFor="let targetFolder of folders">
+                      <div *ngIf="targetFolder.id !== folder.id" class="move-menu-item"
+                        (click)="onMoveMedia(mediaItem, folder.id, targetFolder.id, $event)">
+                        <i class="fas fa-folder"></i> {{ targetFolder.name }}
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -115,9 +131,20 @@
           (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))" class="clickable-image" />
         <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"></video>
         <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
-        <button *ngIf="isEditMode" class="btn-delete-media" (click)="deleteMedia(mediaItem.url)" title="Удалить">
-          <i class="fas fa-times"></i>
-        </button>
+        <div *ngIf="isEditMode" class="media-actions" (click)="$event.stopPropagation()">
+          <button class="btn-move-media" (click)="toggleMoveMenu(mediaItem.url, $event)" title="Переместить">
+            <i class="fas fa-folder-open"></i>
+          </button>
+          <button class="btn-delete-media" (click)="deleteMedia(mediaItem.url)" title="Удалить">
+            <i class="fas fa-times"></i>
+          </button>
+          <div *ngIf="showMoveMenu[mediaItem.url]" class="move-menu" (click)="$event.stopPropagation()">
+            <div *ngFor="let targetFolder of folders" class="move-menu-item"
+              (click)="onMoveMedia(mediaItem, null, targetFolder.id, $event)">
+              <i class="fas fa-folder"></i> {{ targetFolder.name }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

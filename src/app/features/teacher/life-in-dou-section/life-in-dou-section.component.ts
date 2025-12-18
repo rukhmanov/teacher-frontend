@@ -304,6 +304,47 @@ export class LifeInDOUSectionComponent implements OnInit {
     const folder = this.folders.find(f => f.id === folderId);
     return folder?.name || '';
   }
+
+  moveMedia(mediaItem: MediaItem, sourceFolderId: string | null, targetFolderId: string | null) {
+    this.teachersService.moveMedia(mediaItem, sourceFolderId, targetFolderId).subscribe({
+      next: () => {
+        this.loadOwnLifeInDOU();
+      },
+      error: (err: any) => {
+        console.error('Error moving media:', err);
+        alert('Ошибка при перемещении элемента');
+      },
+    });
+  }
+
+  showMoveMenu: { [key: string]: boolean } = {};
+
+  toggleMoveMenu(mediaUrl: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    // Закрываем все остальные меню
+    Object.keys(this.showMoveMenu).forEach(key => {
+      if (key !== mediaUrl) {
+        this.showMoveMenu[key] = false;
+      }
+    });
+    this.showMoveMenu[mediaUrl] = !this.showMoveMenu[mediaUrl];
+  }
+
+  onMoveMedia(mediaItem: MediaItem, sourceFolderId: string | null, targetFolderId: string | null, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.moveMedia(mediaItem, sourceFolderId, targetFolderId);
+    this.showMoveMenu[mediaItem.url] = false;
+  }
+
+  closeAllMoveMenus() {
+    Object.keys(this.showMoveMenu).forEach(key => {
+      this.showMoveMenu[key] = false;
+    });
+  }
 }
 
 
