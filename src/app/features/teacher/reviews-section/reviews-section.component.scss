@@ -1,0 +1,212 @@
+.reviews-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 0;
+
+  .reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    h2 {
+      margin: 0;
+      color: var(--primary-color);
+    }
+  }
+
+  .review-form {
+    margin-bottom: 2rem;
+    padding: 2rem;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    .rating-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+
+      .star-btn {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #ddd;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.2s;
+
+        &:hover {
+          transform: scale(1.1);
+        }
+
+        &.active {
+          color: #ffc107;
+        }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+  }
+
+  .reviews-list {
+    .no-reviews {
+      text-align: center;
+      padding: 3rem 0;
+
+      .empty-state {
+        i {
+          font-size: 4rem;
+          color: #ddd;
+          margin-bottom: 1rem;
+        }
+
+        h3 {
+          color: var(--text-color);
+          margin-bottom: 0.5rem;
+        }
+
+        p {
+          color: var(--text-secondary);
+        }
+      }
+    }
+
+    .review-card {
+      margin-bottom: 1.5rem;
+      padding: 1.5rem;
+      transition: box-shadow 0.3s;
+
+      &:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        position: relative;
+
+        .review-author {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+
+          .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              display: block;
+            }
+          }
+
+          .author-info {
+            h4 {
+              margin: 0 0 0.25rem 0;
+              color: var(--text-color);
+            }
+
+            .review-date {
+              font-size: 0.875rem;
+              color: var(--text-secondary);
+            }
+          }
+        }
+
+        .review-rating-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .review-rating {
+          .stars {
+            display: flex;
+            gap: 0.25rem;
+
+            i {
+              font-size: 1.25rem;
+              color: #ddd;
+
+              &.filled {
+                color: #ffc107;
+              }
+
+              &.empty {
+                color: #ddd;
+              }
+            }
+          }
+        }
+
+        .btn-delete-review {
+          background: none;
+          border: none;
+          color: #dc3545;
+          cursor: pointer;
+          padding: 0.5rem;
+          font-size: 1rem;
+          transition: color 0.3s;
+          opacity: 0.7;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          &:hover {
+            opacity: 1;
+            color: #c82333;
+          }
+
+          i {
+            font-size: 1rem;
+          }
+        }
+      }
+
+      .review-content {
+        p {
+          margin: 0;
+          color: var(--text-color);
+          line-height: 1.6;
+        }
+      }
+    }
+  }
+
+  .alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+
+    &.alert-error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+
+    &.alert-success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
+  }
+}

@@ -1,0 +1,89 @@
+<div class="reviews-section">
+  <div class="reviews-header">
+    <h2>Отзывы</h2>
+    <button *ngIf="!isEditMode && !showReviewForm" class="btn btn-primary" (click)="showReviewForm = true">
+      <i class="fas fa-plus"></i> Оставить отзыв
+    </button>
+  </div>
+
+  <!-- Форма добавления отзыва -->
+  <div *ngIf="showReviewForm" class="review-form card">
+    <h3>Оставить отзыв</h3>
+    <form (ngSubmit)="submitReview()">
+      <div class="form-group">
+        <label class="form-label">Ваше имя *</label>
+        <input type="text" class="form-control" [(ngModel)]="newReview.authorName" name="authorName" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" class="form-control" [(ngModel)]="newReview.authorEmail" name="authorEmail" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Оценка *</label>
+        <div class="rating-input">
+          <button type="button" *ngFor="let star of [1, 2, 3, 4, 5]; let i = index" class="star-btn"
+            [class.active]="newReview.rating >= star" (click)="setRating(star)">
+            <i class="fas fa-star"></i>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Текст отзыва *</label>
+        <textarea class="form-control" [(ngModel)]="newReview.content" name="content" rows="5" required
+          placeholder="Поделитесь своими впечатлениями..."></textarea>
+      </div>
+      <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+      <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          <span *ngIf="!isSubmitting">Отправить</span>
+          <span *ngIf="isSubmitting">Отправка...</span>
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="showReviewForm = false; error = ''; success = ''">
+          Отмена
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Список отзывов -->
+  <div class="reviews-list">
+    <div *ngIf="reviews.length === 0" class="no-reviews">
+      <div class="empty-state">
+        <i class="fas fa-comments"></i>
+        <h3>Пока нет отзывов</h3>
+        <p>Будьте первым, кто оставит отзыв!</p>
+      </div>
+    </div>
+
+    <div *ngFor="let review of reviews" class="review-card card">
+      <div class="review-header">
+        <div class="review-author">
+          <div class="author-avatar">
+            <img [src]="getAvatarPlaceholder(review.authorName)" [alt]="review.authorName"
+              (error)="onAvatarError($event, review.authorName)" />
+          </div>
+          <div class="author-info">
+            <h4>{{ review.authorName }}</h4>
+            <span class="review-date">{{ formatDate(review.createdAt) }}</span>
+          </div>
+        </div>
+        <div class="review-rating-wrapper">
+          <div class="review-rating">
+            <div class="stars">
+              <i *ngFor="let star of [1, 2, 3, 4, 5]" class="fas fa-star" [class.filled]="star <= review.rating"
+                [class.empty]="star > review.rating"></i>
+            </div>
+          </div>
+          <button *ngIf="isEditMode" class="btn-delete-review" (click)="deleteReview(review.id)" title="Удалить отзыв">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="review-content">
+        <p>{{ review.content }}</p>
+      </div>
+    </div>
+  </div>
+</div>

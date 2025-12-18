@@ -5,6 +5,19 @@
         <i class="fas fa-cloud-upload-alt"></i> Загрузить фото/видео
       </h3>
       <div class="upload-controls">
+        <div class="folder-selector">
+          <label>Куда добавить файлы:</label>
+          <select class="form-control" [(ngModel)]="selectedFolderId" name="folderSelect">
+            <option [value]="null">Основной раздел</option>
+            <option *ngFor="let folder of folders" [value]="folder.id">{{ folder.name }}</option>
+          </select>
+          <small class="form-text text-muted" *ngIf="selectedFolderId">
+            Файлы будут добавлены в папку: <strong>{{ getFolderName(selectedFolderId) }}</strong>
+          </small>
+          <small class="form-text text-muted" *ngIf="!selectedFolderId">
+            Файлы будут добавлены в основной раздел
+          </small>
+        </div>
         <input type="file" #mediaInput class="file-input" accept="image/*,video/*" multiple
           (change)="onMediaSelect($event)" />
         <button type="button" class="btn-upload" (click)="mediaInput.click()" [disabled]="isUploading">
@@ -26,6 +39,71 @@
         </div>
       </div>
     </div>
+
+    <!-- Создание папки -->
+    <div class="folder-management card">
+      <h3>
+        <i class="fas fa-folder"></i> Управление папками
+      </h3>
+      <div *ngIf="!showFolderForm">
+        <button type="button" class="btn btn-primary" (click)="showFolderForm = true">
+          <i class="fas fa-plus"></i> Создать папку
+        </button>
+      </div>
+      <div *ngIf="showFolderForm" class="folder-form">
+        <input type="text" class="form-control" [(ngModel)]="newFolderName" placeholder="Название папки" />
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" (click)="createFolder()">Создать</button>
+          <button type="button" class="btn btn-secondary"
+            (click)="showFolderForm = false; newFolderName = ''">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Папки -->
+  <div *ngIf="folders.length > 0" class="folders-section">
+    <h3>Папки</h3>
+    <div class="folders-list">
+      <div *ngFor="let folder of folders" class="folder-card card">
+        <div class="folder-header" (click)="toggleFolder(folder.id)">
+          <div class="folder-title">
+            <i class="fas" [class.fa-folder]="!isFolderExpanded(folder.id)"
+              [class.fa-folder-open]="isFolderExpanded(folder.id)"></i>
+            <span>{{ folder.name }}</span>
+            <span class="folder-count">({{ getFolderMediaItems(folder).length }})</span>
+          </div>
+          <div class="folder-actions" *ngIf="isEditMode" (click)="$event.stopPropagation()">
+            <button type="button" class="btn btn-sm btn-danger" (click)="deleteFolder(folder.id)" title="Удалить папку">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="isFolderExpanded(folder.id)" class="folder-content">
+          <div *ngIf="getFolderMediaItems(folder).length > 0" class="masonry-gallery">
+            <div *ngFor="let mediaItem of getFolderMediaItems(folder)" class="masonry-item"
+              [class.photo]="mediaItem.type === 'photo'" [class.video]="mediaItem.type === 'video'">
+              <div class="media-wrapper">
+                <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
+                  (error)="onImageError($event)"
+                  (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))"
+                  class="clickable-image" />
+                <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls
+                  (error)="onImageError($event)"></video>
+                <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
+                <button *ngIf="isEditMode" class="btn-delete-media"
+                  (click)="deleteMediaFromFolder(folder.id, mediaItem.url)" title="Удалить">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="getFolderMediaItems(folder).length === 0" class="empty-folder">
+            <p>Папка пуста</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="getMediaItems().length > 0" class="masonry-gallery">
@@ -44,12 +122,33 @@
     </div>
   </div>
 
-  <div *ngIf="getMediaItems().length === 0" class="no-items">
-    <div class="empty-state">
-      <i class="fas fa-camera"></i>
-      <h3>Жизнь в ДОУ</h3>
-      <p *ngIf="isEditMode">Загрузите фото и видео из жизни детского сада!</p>
-      <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
+  <!-- Основной раздел (без папок) -->
+  <div *ngIf="getMediaItems().length > 0 || folders.length === 0" class="main-section">
+    <h3 *ngIf="folders.length > 0">Основной раздел</h3>
+    <div *ngIf="getMediaItems().length > 0" class="masonry-gallery">
+      <div *ngFor="let mediaItem of getMediaItems()" class="masonry-item" [class.photo]="mediaItem.type === 'photo'"
+        [class.video]="mediaItem.type === 'video'">
+        <div class="media-wrapper">
+          <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
+            (error)="onImageError($event)"
+            (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))"
+            class="clickable-image" />
+          <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls
+            (error)="onImageError($event)"></video>
+          <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
+          <button *ngIf="isEditMode" class="btn-delete-media" (click)="deleteMedia(mediaItem.url)" title="Удалить">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="getMediaItems().length === 0 && folders.length === 0" class="no-items">
+      <div class="empty-state">
+        <i class="fas fa-camera"></i>
+        <h3>Жизнь в ДОУ</h3>
+        <p *ngIf="isEditMode">Загрузите фото и видео из жизни детского сада или создайте папку!</p>
+        <p *ngIf="!isEditMode">Здесь будут фото и видео из жизни детского сада</p>
+      </div>
     </div>
   </div>
 

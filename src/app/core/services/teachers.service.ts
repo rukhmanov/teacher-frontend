@@ -10,6 +10,11 @@ import {
   ParentSection,
   LifeInDOU,
   SocialLink,
+  Review,
+  CreateReviewRequest,
+  Folder,
+  CreateFolderRequest,
+  MediaItem,
 } from '../models/teacher.interface';
 
 @Injectable({
@@ -266,6 +271,53 @@ export class TeachersService {
     return this.http.delete<void>(
       `${this.apiUrl}/teachers/me/social-links/${id}`,
     );
+  }
+
+  // Reviews
+  getReviews(username: string): Observable<Review[]> {
+    return this.http.get<Review[]>(`${this.apiUrl}/teachers/${username}/reviews`);
+  }
+
+  createReview(username: string, data: CreateReviewRequest): Observable<Review> {
+    return this.http.post<Review>(
+      `${this.apiUrl}/teachers/${username}/reviews`,
+      data,
+    );
+  }
+
+  deleteReview(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/teachers/me/reviews/${id}`);
+  }
+
+  // Folders
+  getFolders(username: string): Observable<Folder[]> {
+    return this.http.get<Folder[]>(`${this.apiUrl}/teachers/${username}/folders`);
+  }
+
+  getOwnFolders(): Observable<Folder[]> {
+    return this.http.get<Folder[]>(`${this.apiUrl}/teachers/me/folders`);
+  }
+
+  createFolder(data: CreateFolderRequest): Observable<Folder> {
+    return this.http.post<Folder>(`${this.apiUrl}/teachers/me/folders`, data);
+  }
+
+  updateFolder(id: string, name: string): Observable<Folder> {
+    return this.http.put<Folder>(`${this.apiUrl}/teachers/me/folders/${id}`, { name });
+  }
+
+  addMediaToFolder(id: string, mediaItem: MediaItem): Observable<Folder> {
+    return this.http.post<Folder>(`${this.apiUrl}/teachers/me/folders/${id}/media`, mediaItem);
+  }
+
+  removeMediaFromFolder(id: string, url: string): Observable<Folder> {
+    return this.http.delete<Folder>(`${this.apiUrl}/teachers/me/folders/${id}/media`, {
+      body: { url },
+    });
+  }
+
+  deleteFolder(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/teachers/me/folders/${id}`);
   }
 }
 

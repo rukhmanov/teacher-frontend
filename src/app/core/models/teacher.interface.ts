@@ -86,8 +86,23 @@ export interface LifeInDOU {
   id: string;
   teacherId: string;
   mediaItems?: MediaItem[];
+  folders?: Folder[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Folder {
+  id: string;
+  lifeInDOUId: string;
+  name: string;
+  mediaItems?: MediaItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateFolderRequest {
+  name: string;
+  mediaItems?: MediaItem[];
 }
 
 export interface SocialLink {
@@ -107,6 +122,24 @@ export interface WhitelistEmail {
   email: string;
   addedBy?: string;
   createdAt: Date;
+}
+
+export interface Review {
+  id: string;
+  teacherId: string;
+  authorName: string;
+  authorEmail?: string;
+  content: string;
+  rating: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateReviewRequest {
+  authorName: string;
+  authorEmail: string;
+  content: string;
+  rating: number;
 }
 
 

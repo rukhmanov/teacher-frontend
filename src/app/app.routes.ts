@@ -62,6 +62,13 @@ export const routes: Routes = [
             './features/teacher/contact-section/contact-section.component'
           ).then((m) => m.ContactSectionComponent),
       },
+      {
+        path: 'reviews',
+        loadComponent: () =>
+          import(
+            './features/teacher/reviews-section/reviews-section.component'
+          ).then((m) => m.ReviewsSectionComponent),
+      },
     ],
   },
   {
@@ -126,6 +133,13 @@ export const routes: Routes = [
           import(
             './features/teacher/contact-section/contact-section.component'
           ).then((m) => m.ContactSectionComponent),
+      },
+      {
+        path: 'reviews',
+        loadComponent: () =>
+          import(
+            './features/teacher/reviews-section/reviews-section.component'
+          ).then((m) => m.ReviewsSectionComponent),
       },
     ],
   },

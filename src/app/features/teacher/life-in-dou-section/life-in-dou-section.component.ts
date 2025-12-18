@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
-import { LifeInDOU, MediaItem } from '../../../core/models/teacher.interface';
+import { LifeInDOU, MediaItem, Folder } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 import { ImageCarouselComponent } from '../../../shared/components/image-carousel/image-carousel.component';
 
@@ -19,12 +19,17 @@ import { ImageCarouselComponent } from '../../../shared/components/image-carouse
 })
 export class LifeInDOUSectionComponent implements OnInit {
   lifeInDOU: LifeInDOU | null = null;
+  folders: Folder[] = [];
   username: string = '';
   isEditMode = false;
   placeholder = PlaceholderUtil;
   
   selectedFiles: File[] = [];
   isUploading = false;
+  selectedFolderId: string | null = null;
+  showFolderForm = false;
+  newFolderName = '';
+  expandedFolders: Set<string> = new Set();
   
   // Карусель изображений
   showCarousel: boolean = false;
@@ -56,6 +61,11 @@ export class LifeInDOUSectionComponent implements OnInit {
           this.lifeInDOU = item;
         },
       });
+      this.teachersService.getFolders(this.username).subscribe({
+        next: (folders) => {
+          this.folders = folders;
+        },
+      });
     }
   }
 
@@ -63,6 +73,11 @@ export class LifeInDOUSectionComponent implements OnInit {
     this.teachersService.getOwnLifeInDOU().subscribe({
       next: (item) => {
         this.lifeInDOU = item;
+      },
+    });
+    this.teachersService.getOwnFolders().subscribe({
+      next: (folders) => {
+        this.folders = folders;
       },
     });
   }
@@ -98,30 +113,52 @@ export class LifeInDOUSectionComponent implements OnInit {
     // Загружаем все файлы параллельно
     forkJoin(uploadObservables).subscribe({
       next: (mediaItems) => {
-        // Добавляем медиа элементы по одному
-        const addObservables = mediaItems.map(item => 
-          this.teachersService.addMediaToLifeInDOU(item)
-        );
-        
-        forkJoin(addObservables).subscribe({
-          next: () => {
-            this.loadOwnLifeInDOU();
-            this.selectedFiles = [];
-            this.isUploading = false;
-            // Очищаем input
-            const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-            if (fileInput) {
-              fileInput.value = '';
-            }
-          },
-          error: (err) => {
-            console.error('Error adding media:', err);
-            this.isUploading = false;
-            alert('Ошибка при добавлении медиа элементов');
-          },
-        });
+        if (this.selectedFolderId) {
+          // Добавляем в папку
+          const addToFolderObservables = mediaItems.map(item =>
+            this.teachersService.addMediaToFolder(this.selectedFolderId!, item)
+          );
+          forkJoin(addToFolderObservables).subscribe({
+            next: () => {
+              this.loadOwnLifeInDOU();
+              this.selectedFiles = [];
+              this.selectedFolderId = null;
+              this.isUploading = false;
+              const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+              if (fileInput) {
+                fileInput.value = '';
+              }
+            },
+            error: (err: any) => {
+              console.error('Error adding media to folder:', err);
+              this.isUploading = false;
+              alert('Ошибка при добавлении медиа в папку');
+            },
+          });
+        } else {
+          // Добавляем в основной раздел
+          const addObservables = mediaItems.map(item => 
+            this.teachersService.addMediaToLifeInDOU(item)
+          );
+          forkJoin(addObservables).subscribe({
+            next: () => {
+              this.loadOwnLifeInDOU();
+              this.selectedFiles = [];
+              this.isUploading = false;
+              const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+              if (fileInput) {
+                fileInput.value = '';
+              }
+            },
+            error: (err: any) => {
+              console.error('Error adding media:', err);
+              this.isUploading = false;
+              alert('Ошибка при добавлении медиа элементов');
+            },
+          });
+        }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error uploading files:', err);
         this.isUploading = false;
         const errorMessage = err?.error?.message || err?.message || 'Ошибка при загрузке файлов';
@@ -136,7 +173,7 @@ export class LifeInDOUSectionComponent implements OnInit {
         next: () => {
           this.loadOwnLifeInDOU();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error deleting media:', err);
           alert('Ошибка при удалении элемента');
         },
@@ -186,6 +223,86 @@ export class LifeInDOUSectionComponent implements OnInit {
 
   getImageUrl(url: string | null | undefined): string {
     return PlaceholderUtil.getImageUrl(url, 'gallery');
+  }
+
+  // Folder methods
+  createFolder() {
+    if (!this.newFolderName.trim()) {
+      alert('Введите название папки');
+      return;
+    }
+
+    this.teachersService.createFolder({ name: this.newFolderName.trim() }).subscribe({
+      next: () => {
+        this.newFolderName = '';
+        this.showFolderForm = false;
+        this.loadOwnLifeInDOU();
+      },
+      error: (err: any) => {
+        console.error('Error creating folder:', err);
+        alert('Ошибка при создании папки');
+      },
+    });
+  }
+
+  toggleFolder(folderId: string) {
+    if (this.expandedFolders.has(folderId)) {
+      this.expandedFolders.delete(folderId);
+    } else {
+      this.expandedFolders.add(folderId);
+    }
+  }
+
+  isFolderExpanded(folderId: string): boolean {
+    return this.expandedFolders.has(folderId);
+  }
+
+  deleteFolder(folderId: string) {
+    if (confirm('Удалить эту папку? Все содержимое будет удалено.')) {
+      this.teachersService.deleteFolder(folderId).subscribe({
+        next: () => {
+          this.loadOwnLifeInDOU();
+        },
+        error: (err: any) => {
+          console.error('Error deleting folder:', err);
+          alert('Ошибка при удалении папки');
+        },
+      });
+    }
+  }
+
+  deleteMediaFromFolder(folderId: string, mediaUrl: string) {
+    if (confirm('Удалить этот элемент из папки?')) {
+      this.teachersService.removeMediaFromFolder(folderId, mediaUrl).subscribe({
+        next: () => {
+          this.loadOwnLifeInDOU();
+        },
+        error: (err: any) => {
+          console.error('Error deleting media from folder:', err);
+          alert('Ошибка при удалении элемента');
+        },
+      });
+    }
+  }
+
+  getFolderMediaItems(folder: Folder): MediaItem[] {
+    if (!folder.mediaItems) {
+      return [];
+    }
+    return folder.mediaItems.filter(
+      (item: any) =>
+        item &&
+        typeof item === 'object' &&
+        item.url &&
+        item.type &&
+        !Array.isArray(item)
+    ) as MediaItem[];
+  }
+
+  getFolderName(folderId: string | null): string {
+    if (!folderId) return '';
+    const folder = this.folders.find(f => f.id === folderId);
+    return folder?.name || '';
   }
 }
 
