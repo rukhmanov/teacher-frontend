@@ -39,6 +39,10 @@ export class AdminService {
   removeFromWhitelist(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/admin/whitelist/${id}`);
   }
+
+  deleteTeacher(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/admin/teachers/${id}`);
+  }
 }
 
 

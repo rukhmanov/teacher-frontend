@@ -139,22 +139,8 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'teachers',
+        redirectTo: 'whitelist',
         pathMatch: 'full',
-      },
-      {
-        path: 'teachers',
-        loadComponent: () =>
-          import(
-            './features/admin/admin-teachers-list/admin-teachers-list.component'
-          ).then((m) => m.AdminTeachersListComponent),
-      },
-      {
-        path: 'teachers/:id/edit',
-        loadComponent: () =>
-          import(
-            './features/admin/admin-edit-teacher/admin-edit-teacher.component'
-          ).then((m) => m.AdminEditTeacherComponent),
       },
       {
         path: 'whitelist',

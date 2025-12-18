@@ -58,7 +58,10 @@ export class HomeComponent implements OnInit {
   loadTeachers() {
     this.teachersService.getAllTeachers().subscribe({
       next: (teachers) => {
-        this.teachers = teachers;
+        // Исключаем администратора из списка
+        this.teachers = teachers.filter(
+          (teacher) => teacher.user?.email !== 'admin@admin.com'
+        );
       },
       error: (err) => {
         console.error('Error loading teachers:', err);

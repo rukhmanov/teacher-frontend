@@ -1,0 +1,15 @@
+<div class="toast-container">
+  <div *ngFor="let toast of toasts" class="toast" [class.toast-success]="toast.type === 'success'"
+    [class.toast-error]="toast.type === 'error'" [class.toast-info]="toast.type === 'info'"
+    [class.toast-warning]="toast.type === 'warning'" (click)="removeToast(toast.id)">
+    <div class="toast-icon">
+      <i class="fas" [class.fa-check-circle]="toast.type === 'success'"
+        [class.fa-exclamation-circle]="toast.type === 'error'" [class.fa-info-circle]="toast.type === 'info'"
+        [class.fa-exclamation-triangle]="toast.type === 'warning'"></i>
+    </div>
+    <div class="toast-message">{{ toast.message }}</div>
+    <button class="toast-close" (click)="removeToast(toast.id); $event.stopPropagation()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>
