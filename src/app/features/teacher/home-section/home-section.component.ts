@@ -322,6 +322,12 @@ export class HomeSectionComponent implements OnInit {
     this.carouselImages = [];
     this.carouselStartIndex = 0;
   }
+
+  getFullName(teacher: TeacherProfile | null): string {
+    if (!teacher) return '';
+    const parts = [teacher.firstName, teacher.patronymic, teacher.lastName].filter(p => p);
+    return parts.join(' ');
+  }
 }
 
 

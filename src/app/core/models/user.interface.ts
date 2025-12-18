@@ -24,6 +24,7 @@ export interface RegisterRequest {
   username: string;
   firstName: string;
   lastName: string;
+  patronymic?: string;
 }
 
 export interface RegisterFormData extends RegisterRequest {

@@ -3,10 +3,10 @@
     <aside class="sidebar" *ngIf="teacher || isEditMode">
       <div class="sidebar-card">
         <div class="sidebar-photo" *ngIf="teacher">
-          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
-            [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event, 'avatar')" />
+          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')" [alt]="getFullName(teacher)"
+            (error)="onImageError($event, 'avatar')" />
         </div>
-        <h3 *ngIf="teacher">{{ teacher.firstName }} {{ teacher.lastName }}</h3>
+        <h3 *ngIf="teacher">{{ getFullName(teacher) }}</h3>
         <p *ngIf="teacher?.bio" class="sidebar-bio">{{ teacher?.bio }}</p>
       </div>
     </aside>

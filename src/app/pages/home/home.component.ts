@@ -32,6 +32,7 @@ export class HomeComponent implements OnInit {
     username: '',
     firstName: '',
     lastName: '',
+    patronymic: '',
   };
 
   error: string = '';
@@ -128,6 +129,11 @@ export class HomeComponent implements OnInit {
     if (img) {
       img.src = this.placeholder.getAvatarPlaceholder();
     }
+  }
+
+  getFullName(teacher: TeacherProfile): string {
+    const parts = [teacher.firstName, teacher.patronymic, teacher.lastName].filter(p => p);
+    return parts.join(' ');
   }
 }
 

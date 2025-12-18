@@ -5,12 +5,12 @@
     <div class="container">
       <div class="profile-info">
         <div class="profile-photo">
-          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
-            [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event)" />
+          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')" [alt]="getFullName(teacher)"
+            (error)="onImageError($event)" />
         </div>
         <div class="profile-details">
           <div class="profile-title-row">
-            <h1>{{ teacher.firstName }} {{ teacher.lastName }}</h1>
+            <h1>{{ getFullName(teacher) }}</h1>
             <button *ngIf="isOwnProfile" class="btn-edit-profile" (click)="goToEditProfile()">
               <i class="fas fa-edit"></i>
               <span>Редактировать профиль</span>

@@ -78,6 +78,7 @@ export class TeacherProfileEditComponent implements OnInit {
             userId: user?.id || '',
             firstName: '',
             lastName: '',
+            patronymic: '',
             bio: '',
             createdAt: new Date(),
             updatedAt: new Date(),

@@ -58,6 +58,11 @@
             <input type="text" class="form-control" [(ngModel)]="registerData.lastName" name="lastName" required />
           </div>
           <div class="form-group">
+            <label class="form-label">Отчество</label>
+            <input type="text" class="form-control" [(ngModel)]="registerData.patronymic" name="patronymic" />
+            <small>Необязательное поле, можно заполнить позже</small>
+          </div>
+          <div class="form-group">
             <label class="form-label">Пароль</label>
             <input type="password" class="form-control" [(ngModel)]="registerData.password" name="password" required />
           </div>
@@ -78,11 +83,11 @@
       <div class="teachers-grid">
         <div *ngFor="let teacher of teachers" class="teacher-card" [routerLink]="['/teacher', teacher.user?.username]">
           <div class="teacher-photo">
-            <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')"
-              [alt]="teacher.firstName + ' ' + teacher.lastName" (error)="onImageError($event)" />
+            <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')" [alt]="getFullName(teacher)"
+              (error)="onImageError($event)" />
           </div>
           <div class="teacher-info">
-            <h3>{{ teacher.firstName }} {{ teacher.lastName }}</h3>
+            <h3>{{ getFullName(teacher) }}</h3>
             <p *ngIf="teacher.bio">{{ teacher.bio | slice:0:100 }}...</p>
           </div>
         </div>

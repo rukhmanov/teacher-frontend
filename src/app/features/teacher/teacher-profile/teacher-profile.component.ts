@@ -74,6 +74,12 @@ export class TeacherProfileComponent implements OnInit {
   goToEditProfile() {
     this.router.navigate(['/me/profile']);
   }
+
+  getFullName(teacher: TeacherProfile | null): string {
+    if (!teacher) return '';
+    const parts = [teacher.firstName, teacher.patronymic, teacher.lastName].filter(p => p);
+    return parts.join(' ');
+  }
 }
 
 

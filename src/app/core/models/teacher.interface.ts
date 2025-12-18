@@ -13,6 +13,7 @@ export interface TeacherProfile {
   user?: User;
   firstName?: string;
   lastName?: string;
+  patronymic?: string;
   photoUrl?: string;
   bio?: string;
   location?: string;

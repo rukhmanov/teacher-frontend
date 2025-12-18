@@ -113,9 +113,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
       // Для страницы редактирования используем имя из профиля учителя
       if (this.teacherProfile) {
         const firstName = this.teacherProfile.firstName || '';
+        const patronymic = this.teacherProfile.patronymic || '';
         const lastName = this.teacherProfile.lastName || '';
-        if (firstName || lastName) {
-          return `${firstName} ${lastName}`.trim();
+        const parts = [firstName, patronymic, lastName].filter(p => p);
+        if (parts.length > 0) {
+          return parts.join(' ');
         }
       }
       // Если профиль еще не загружен, используем email
@@ -126,9 +128,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     if (this.teacherProfile) {
       const firstName = this.teacherProfile.firstName || '';
+      const patronymic = this.teacherProfile.patronymic || '';
       const lastName = this.teacherProfile.lastName || '';
-      if (firstName || lastName) {
-        return `${firstName} ${lastName}`.trim();
+      const parts = [firstName, patronymic, lastName].filter(p => p);
+      if (parts.length > 0) {
+        return parts.join(' ');
       }
       // Если нет имени, используем username из URL
       const match = this.router.url.match(/\/teacher\/([^\/]+)/);
