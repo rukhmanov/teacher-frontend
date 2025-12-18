@@ -82,6 +82,102 @@
   .bio {
     color: rgba(255, 255, 255, 0.9);
     font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .video-visitka {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+    .video-visitka-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.3s ease;
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      h3 {
+        color: var(--white);
+        font-size: 1.2rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+
+        i {
+          font-size: 1.1rem;
+        }
+      }
+
+      .video-toggle-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.5);
+          transform: scale(1.1);
+        }
+
+        i {
+          font-size: 0.9rem;
+          transition: transform 0.3s ease;
+        }
+
+        &.expanded {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 600px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+      margin-top: 0;
+
+      &.expanded {
+        max-height: 1000px;
+        opacity: 1;
+        margin-top: 1rem;
+      }
+
+      .video-player {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .video-iframe {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        display: block;
+      }
+    }
   }
 }
 
@@ -155,6 +251,13 @@
     white-space: nowrap;
     flex-shrink: 0;
     font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      font-size: 1rem;
+    }
 
     &:hover,
     &.active {
@@ -165,6 +268,10 @@
     @media (max-width: 480px) {
       padding: 0.5rem 0.75rem;
       font-size: 0.85rem;
+
+      i {
+        font-size: 0.9rem;
+      }
     }
   }
 }

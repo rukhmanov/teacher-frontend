@@ -1,16 +1,5 @@
 <div class="home-section">
   <div class="section-layout">
-    <aside class="sidebar" *ngIf="teacher || isEditMode">
-      <div class="sidebar-card">
-        <div class="sidebar-photo" *ngIf="teacher">
-          <img [src]="placeholder.getImageUrl(teacher.photoUrl, 'avatar')" [alt]="getFullName(teacher)"
-            (error)="onImageError($event, 'avatar')" />
-        </div>
-        <h3 *ngIf="teacher">{{ getFullName(teacher) }}</h3>
-        <p *ngIf="teacher?.bio" class="sidebar-bio">{{ teacher?.bio }}</p>
-      </div>
-    </aside>
-
     <main class="main-content">
       <div *ngIf="isEditMode" class="post-form-section">
         <button class="btn-create-post" (click)="editingPostId ? cancelEdit() : (showPostForm = !showPostForm)">

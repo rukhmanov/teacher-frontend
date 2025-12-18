@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { ParentSection } from '../../../core/models/teacher.interface';
@@ -20,9 +21,11 @@ export class ParentSectionComponent implements OnInit {
   isEditMode = false;
   showForm = false;
   editingSectionId: string | null = null;
-  newSection: Partial<ParentSection> = { title: '', content: '', cardColor: '' };
+  newSection: Partial<ParentSection> = { title: '', content: '', cardColor: '', files: [] };
   placeholder = PlaceholderUtil;
   isUploading = false;
+  selectedFiles: File[] = [];
+  uploadedFileUrls: string[] = [];
 
   // Модальное окно
   showModal: boolean = false;
@@ -66,7 +69,58 @@ export class ParentSectionComponent implements OnInit {
   }
 
   createSection() {
-    this.submitSection();
+    if (this.selectedFiles.length > 0) {
+      this.uploadFiles();
+    } else {
+      this.submitSection();
+    }
+  }
+
+  onFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFiles = Array.from(input.files);
+    }
+  }
+
+  removeSelectedFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  uploadFiles() {
+    if (this.selectedFiles.length === 0) {
+      this.submitSection();
+      return;
+    }
+
+    this.isUploading = true;
+    const uploadObservables = this.selectedFiles.map(file => 
+      this.uploadService.uploadFile(file)
+    );
+
+    forkJoin(uploadObservables).subscribe({
+      next: (responses) => {
+        this.uploadedFileUrls = responses.map(r => r.url);
+        if (this.newSection.files) {
+          this.newSection.files = [...this.newSection.files, ...this.uploadedFileUrls];
+        } else {
+          this.newSection.files = [...this.uploadedFileUrls];
+        }
+        this.selectedFiles = [];
+        this.uploadedFileUrls = [];
+        this.submitSection();
+      },
+      error: () => {
+        this.isUploading = false;
+        alert('Ошибка при загрузке файлов');
+      },
+    });
+  }
+
+  removeFile(fileUrl: string) {
+    if (this.newSection.files) {
+      this.newSection.files = this.newSection.files.filter(f => f !== fileUrl);
+    }
   }
 
   private submitSection() {
@@ -105,14 +159,19 @@ export class ParentSectionComponent implements OnInit {
       title: section.title,
       content: section.content,
       cardColor: section.cardColor || '',
+      files: section.files ? [...section.files] : [],
     };
+    this.selectedFiles = [];
+    this.uploadedFileUrls = [];
     this.showForm = true;
   }
 
   cancelEdit() {
     this.showForm = false;
     this.editingSectionId = null;
-    this.newSection = { title: '', content: '', cardColor: '' };
+    this.newSection = { title: '', content: '', cardColor: '', files: [] };
+    this.selectedFiles = [];
+    this.uploadedFileUrls = [];
   }
 
   removeCardColor() {
@@ -152,6 +211,22 @@ export class ParentSectionComponent implements OnInit {
     this.showModal = false;
     this.selectedSection = null;
     document.body.style.overflow = '';
+  }
+
+  getFileName(fileUrl: string): string {
+    if (!fileUrl) return '';
+    const parts = fileUrl.split('/');
+    return parts[parts.length - 1] || fileUrl;
+  }
+
+  getFileIcon(fileUrl: string): string {
+    if (!fileUrl) return 'fa-file';
+    const url = fileUrl.toLowerCase();
+    if (url.endsWith('.pdf')) return 'fa-file-pdf';
+    if (url.endsWith('.doc') || url.endsWith('.docx')) return 'fa-file-word';
+    if (url.endsWith('.xls') || url.endsWith('.xlsx')) return 'fa-file-excel';
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.gif')) return 'fa-file-image';
+    return 'fa-file';
   }
 }
 

@@ -35,6 +35,20 @@ export const routes: Routes = [
           ).then((m) => m.MasterClassesSectionComponent),
       },
       {
+        path: 'publications',
+        loadComponent: () =>
+          import(
+            './features/teacher/publications-section/publications-section.component'
+          ).then((m) => m.PublicationsSectionComponent),
+      },
+      {
+        path: 'certificates',
+        loadComponent: () =>
+          import(
+            './features/teacher/certificates-section/certificates-section.component'
+          ).then((m) => m.CertificatesSectionComponent),
+      },
+      {
         path: 'presentations',
         loadComponent: () =>
           import(
@@ -105,6 +119,20 @@ export const routes: Routes = [
           import(
             './features/teacher/master-classes-section/master-classes-section.component'
           ).then((m) => m.MasterClassesSectionComponent),
+      },
+      {
+        path: 'publications',
+        loadComponent: () =>
+          import(
+            './features/teacher/publications-section/publications-section.component'
+          ).then((m) => m.PublicationsSectionComponent),
+      },
+      {
+        path: 'certificates',
+        loadComponent: () =>
+          import(
+            './features/teacher/certificates-section/certificates-section.component'
+          ).then((m) => m.CertificatesSectionComponent),
       },
       {
         path: 'presentations',

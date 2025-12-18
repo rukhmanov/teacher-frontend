@@ -5,23 +5,23 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
-import { Presentation } from '../../../core/models/teacher.interface';
+import { Publication } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
-  selector: 'app-presentations-section',
+  selector: 'app-certificates-section',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './presentations-section.component.html',
-  styleUrl: './presentations-section.component.scss',
+  templateUrl: './certificates-section.component.html',
+  styleUrl: './certificates-section.component.scss',
 })
-export class PresentationsSectionComponent implements OnInit {
-  presentations: Presentation[] = [];
+export class CertificatesSectionComponent implements OnInit {
+  certificates: Publication[] = [];
   username: string = '';
   isEditMode = false;
   showForm = false;
-  editingPresentationId: string | null = null;
-  newPresentation: Partial<Presentation> = { title: '', description: '', fileUrl: '', cardColor: '' };
+  editingCertificateId: string | null = null;
+  newCertificate: Partial<Publication> = { title: '', description: '', fileUrl: '', cardColor: '', type: 'certificate' };
   selectedFile: File | null = null;
   useFileUpload = false;
   isUploading = false;
@@ -29,9 +29,9 @@ export class PresentationsSectionComponent implements OnInit {
 
   // Модальное окно
   showModal: boolean = false;
-  selectedPresentation: Presentation | null = null;
+  selectedCertificate: Publication | null = null;
   showViewerModal: boolean = false;
-  viewerPresentation: Presentation | null = null;
+  viewerCertificate: Publication | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,28 +45,30 @@ export class PresentationsSectionComponent implements OnInit {
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
       if (this.username) {
-        this.loadPublicPresentations();
+        this.loadPublicCertificates();
       } else {
         this.isEditMode = true;
-        this.loadOwnPresentations();
+        this.loadOwnCertificates();
       }
     });
   }
 
-  loadPublicPresentations() {
+  loadPublicCertificates() {
     if (this.username) {
-      this.teachersService.getPresentations(this.username).subscribe({
-        next: (presentations) => {
-          this.presentations = presentations;
+      this.teachersService.getPublications(this.username).subscribe({
+        next: (publications) => {
+          // Фильтруем только сертификаты
+          this.certificates = publications.filter(p => p.type === 'certificate');
         },
       });
     }
   }
 
-  loadOwnPresentations() {
-    this.teachersService.getOwnPresentations().subscribe({
-      next: (presentations) => {
-        this.presentations = presentations;
+  loadOwnCertificates() {
+    this.teachersService.getOwnPublications().subscribe({
+      next: (publications) => {
+        // Фильтруем только сертификаты
+        this.certificates = publications.filter(p => p.type === 'certificate');
       },
     });
   }
@@ -85,19 +87,19 @@ export class PresentationsSectionComponent implements OnInit {
 
   switchToFileUpload() {
     this.useFileUpload = true;
-    this.newPresentation.fileUrl = '';
+    this.newCertificate.fileUrl = '';
   }
 
-  createPresentation() {
-    if (!this.newPresentation.title) {
-      alert('Пожалуйста, укажите название презентации');
+  createCertificate() {
+    if (!this.newCertificate.title) {
+      alert('Пожалуйста, укажите название');
       return;
     }
 
-    this.continuePresentationCreation();
+    this.continueCertificateCreation();
   }
 
-  private continuePresentationCreation() {
+  private continueCertificateCreation() {
     // Если выбран режим загрузки файла
     if (this.useFileUpload) {
       if (!this.selectedFile) {
@@ -108,8 +110,8 @@ export class PresentationsSectionComponent implements OnInit {
       this.isUploading = true;
       this.uploadService.uploadFile(this.selectedFile).subscribe({
         next: (response) => {
-          this.newPresentation.fileUrl = response.url;
-          this.createPresentationWithUrl();
+          this.newCertificate.fileUrl = response.url;
+          this.createCertificateWithUrl();
         },
         error: () => {
           this.isUploading = false;
@@ -118,20 +120,20 @@ export class PresentationsSectionComponent implements OnInit {
       });
     } else {
       // Режим URL
-      if (!this.newPresentation.fileUrl) {
+      if (!this.newCertificate.fileUrl) {
         alert('Пожалуйста, укажите URL файла');
         this.isUploading = false;
         return;
       }
-      this.createPresentationWithUrl();
+      this.createCertificateWithUrl();
     }
   }
 
-  private createPresentationWithUrl() {
-    if (this.editingPresentationId) {
-      this.teachersService.updatePresentation(this.editingPresentationId, this.newPresentation as any).subscribe({
+  private createCertificateWithUrl() {
+    if (this.editingCertificateId) {
+      this.teachersService.updatePublication(this.editingCertificateId, this.newCertificate as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnCertificates();
           this.cancelEdit();
         },
         error: () => {
@@ -142,9 +144,9 @@ export class PresentationsSectionComponent implements OnInit {
         },
       });
     } else {
-      this.teachersService.createPresentation(this.newPresentation as any).subscribe({
+      this.teachersService.createPublication(this.newCertificate as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnCertificates();
           this.cancelEdit();
         },
         error: () => {
@@ -157,13 +159,14 @@ export class PresentationsSectionComponent implements OnInit {
     }
   }
 
-  editPresentation(presentation: Presentation) {
-    this.editingPresentationId = presentation.id;
-    this.newPresentation = {
-      title: presentation.title,
-      description: presentation.description,
-      fileUrl: presentation.fileUrl,
-      cardColor: presentation.cardColor || '',
+  editCertificate(certificate: Publication) {
+    this.editingCertificateId = certificate.id;
+    this.newCertificate = {
+      title: certificate.title,
+      description: certificate.description,
+      fileUrl: certificate.fileUrl,
+      cardColor: certificate.cardColor || '',
+      type: 'certificate',
     };
     this.selectedFile = null;
     this.useFileUpload = false;
@@ -172,25 +175,25 @@ export class PresentationsSectionComponent implements OnInit {
 
   cancelEdit() {
     this.showForm = false;
-    this.editingPresentationId = null;
+    this.editingCertificateId = null;
     this.resetForm();
   }
 
   private resetForm() {
-    this.newPresentation = { title: '', description: '', fileUrl: '', cardColor: '' };
+    this.newCertificate = { title: '', description: '', fileUrl: '', cardColor: '', type: 'certificate' };
     this.selectedFile = null;
     this.useFileUpload = false;
   }
 
   removeCardColor() {
-    this.newPresentation.cardColor = '';
+    this.newCertificate.cardColor = '';
   }
 
-  deletePresentation(id: string) {
-    if (confirm('Удалить эту презентацию?')) {
-      this.teachersService.deletePresentation(id).subscribe({
+  deleteCertificate(id: string) {
+    if (confirm('Удалить этот сертификат?')) {
+      this.teachersService.deletePublication(id).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnCertificates();
         },
       });
     }
@@ -201,31 +204,31 @@ export class PresentationsSectionComponent implements OnInit {
     return description.length > 200 ? description.substring(0, 200) + '...' : description;
   }
 
-  shouldShowFullButton(presentation: Presentation): boolean {
-    return !!(presentation.description && presentation.description.length > 200);
+  shouldShowFullButton(certificate: Publication): boolean {
+    return !!(certificate.description && certificate.description.length > 200);
   }
 
-  openModal(presentation: Presentation): void {
-    this.selectedPresentation = presentation;
+  openModal(certificate: Publication): void {
+    this.selectedCertificate = certificate;
     this.showModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   closeModal(): void {
     this.showModal = false;
-    this.selectedPresentation = null;
+    this.selectedCertificate = null;
     document.body.style.overflow = '';
   }
 
-  openViewerModal(presentation: Presentation): void {
-    this.viewerPresentation = presentation;
+  openViewerModal(certificate: Publication): void {
+    this.viewerCertificate = certificate;
     this.showViewerModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   closeViewerModal(): void {
     this.showViewerModal = false;
-    this.viewerPresentation = null;
+    this.viewerCertificate = null;
     document.body.style.overflow = '';
   }
 
@@ -273,24 +276,15 @@ export class PresentationsSectionComponent implements OnInit {
     return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
   }
 
-  isPptxFile(fileUrl: string): boolean {
-    if (!fileUrl) return false;
-    const url = fileUrl.toLowerCase();
-    return url.endsWith('.pptx') || url.endsWith('.ppt') || url.endsWith('.pdf') || url.endsWith('.odp');
-  }
-
   canViewInBrowser(fileUrl: string): boolean {
     return this.getViewerUrl(fileUrl) !== null;
   }
 
-  openInBrowser(presentation: Presentation): void {
-    const viewerUrl = this.getViewerUrl(presentation.fileUrl);
+  openInBrowser(certificate: Publication): void {
+    const viewerUrl = this.getViewerUrl(certificate.fileUrl);
     if (viewerUrl) {
       // SafeResourceUrl имеет свойство changingThisBreaksApplicationSecurity для получения строки
       window.open((viewerUrl as any).changingThisBreaksApplicationSecurity || viewerUrl.toString(), '_blank');
     }
   }
 }
-
-
-

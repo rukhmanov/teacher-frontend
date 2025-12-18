@@ -15,6 +15,7 @@ export interface TeacherProfile {
   lastName?: string;
   patronymic?: string;
   photoUrl?: string;
+  videoUrl?: string;
   bio?: string;
   location?: string;
   latitude?: number;
@@ -60,6 +61,20 @@ export interface Presentation {
   previewImage?: string;
   cardColor?: string;
   coverImage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Publication {
+  id: string;
+  teacherId: string;
+  title: string;
+  description?: string;
+  fileUrl: string;
+  previewImage?: string;
+  cardColor?: string;
+  coverImage?: string;
+  type?: string; // 'publication' или 'certificate'
   createdAt: Date;
   updatedAt: Date;
 }

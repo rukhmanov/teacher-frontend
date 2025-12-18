@@ -28,6 +28,8 @@ export class TeacherProfileEditComponent implements OnInit {
   };
   placeholder = PlaceholderUtil;
   isAddressValid: boolean = false; // Флаг валидности адреса
+  useVideoUpload = false;
+  selectedVideoFile: File | null = null;
 
   router = inject(Router);
 
@@ -160,6 +162,65 @@ export class TeacherProfileEditComponent implements OnInit {
           }
         },
       });
+    }
+  }
+
+  switchToVideoUrl() {
+    this.useVideoUpload = false;
+    this.selectedVideoFile = null;
+  }
+
+  switchToVideoFileUpload() {
+    this.useVideoUpload = true;
+    if (this.profile) {
+      this.profile.videoUrl = '';
+    }
+  }
+
+  onVideoFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedVideoFile = input.files[0];
+      if (this.selectedVideoFile && this.profile) {
+        // Загружаем видео файл
+        this.uploadService.uploadFile(this.selectedVideoFile).subscribe({
+          next: (response) => {
+            if (this.profile) {
+              this.profile.videoUrl = response.url;
+              this.selectedVideoFile = null;
+            }
+          },
+          error: () => {
+            alert('Ошибка при загрузке видео файла');
+          },
+        });
+      }
+    }
+  }
+
+  isVideoUrl(url: string | undefined): boolean {
+    if (!url) return false;
+    const videoUrl = url.toLowerCase();
+    // Проверяем, является ли это URL видеохостинга (не прямой файл)
+    return (videoUrl.includes('youtube.com') || 
+           videoUrl.includes('youtu.be') || 
+           videoUrl.includes('vimeo.com')) &&
+           !this.isDirectVideoFile(url);
+  }
+
+  isDirectVideoFile(url: string | undefined): boolean {
+    if (!url) return false;
+    const videoUrl = url.toLowerCase();
+    const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.wmv'];
+    return videoExtensions.some(ext => videoUrl.endsWith(ext)) || 
+           videoUrl.includes('/video/') && !videoUrl.includes('youtube.com') && !videoUrl.includes('vimeo.com');
+  }
+
+  removeVideo() {
+    if (this.profile) {
+      this.profile.videoUrl = '';
+      this.selectedVideoFile = null;
+      this.useVideoUpload = false;
     }
   }
 

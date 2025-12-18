@@ -17,6 +17,32 @@
             </button>
           </div>
           <p *ngIf="teacher.bio" class="bio">{{ teacher.bio }}</p>
+          <div *ngIf="teacher.videoUrl" class="video-visitka">
+            <div class="video-visitka-header" (click)="toggleVideo()">
+              <h3><i class="fas fa-video"></i> Видео визитка</h3>
+              <button class="video-toggle-btn" [class.expanded]="isVideoExpanded">
+                <i class="fas" [class.fa-chevron-down]="!isVideoExpanded" [class.fa-chevron-up]="isVideoExpanded"></i>
+              </button>
+            </div>
+            <div class="video-container" [class.expanded]="isVideoExpanded">
+              <!-- Прямые видео файлы -->
+              <video *ngIf="isDirectVideoFile(teacher.videoUrl)" [src]="teacher.videoUrl" controls
+                class="video-player"></video>
+              <!-- YouTube -->
+              <iframe *ngIf="isYouTubeUrl(teacher.videoUrl) && getYouTubeEmbedUrl(teacher.videoUrl)"
+                [src]="getYouTubeEmbedUrl(teacher.videoUrl)!" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen class="video-iframe"></iframe>
+              <!-- Vimeo -->
+              <iframe *ngIf="isVimeoUrl(teacher.videoUrl) && getVimeoEmbedUrl(teacher.videoUrl)"
+                [src]="getVimeoEmbedUrl(teacher.videoUrl)!" frameborder="0"
+                allow="autoplay; fullscreen; picture-in-picture" allowfullscreen class="video-iframe"></iframe>
+              <!-- Другие URL - пробуем показать как видео -->
+              <video
+                *ngIf="!isDirectVideoFile(teacher.videoUrl) && !isYouTubeUrl(teacher.videoUrl) && !isVimeoUrl(teacher.videoUrl)"
+                [src]="teacher.videoUrl" controls class="video-player"></video>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -26,25 +52,31 @@
     <nav class="profile-nav">
       <a [routerLink]="['/teacher', username, 'home']" routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }">
-        Главная
+        <i class="fas fa-blog"></i> Мой блог
       </a>
       <a [routerLink]="['/teacher', username, 'master-classes']" routerLinkActive="active">
-        Мастер-классы
+        <i class="fas fa-graduation-cap"></i> Мастер-классы
+      </a>
+      <a [routerLink]="['/teacher', username, 'publications']" routerLinkActive="active">
+        <i class="fas fa-file-alt"></i> Публикации
+      </a>
+      <a [routerLink]="['/teacher', username, 'certificates']" routerLinkActive="active">
+        <i class="fas fa-certificate"></i> Сертификаты
       </a>
       <a [routerLink]="['/teacher', username, 'presentations']" routerLinkActive="active">
-        Презентации
+        <i class="fas fa-file-powerpoint"></i> Презентации
       </a>
       <a [routerLink]="['/teacher', username, 'parents']" routerLinkActive="active">
-        Для родителей
+        <i class="fas fa-users"></i> Для родителей
       </a>
       <a [routerLink]="['/teacher', username, 'life']" routerLinkActive="active">
-        Жизнь в ДОУ
+        <i class="fas fa-camera"></i> Жизнь в ДОУ
       </a>
       <a [routerLink]="['/teacher', username, 'contact']" routerLinkActive="active">
-        Связь со мной
+        <i class="fas fa-envelope"></i> Связь со мной
       </a>
       <a [routerLink]="['/teacher', username, 'reviews']" routerLinkActive="active">
-        Отзывы
+        <i class="fas fa-star"></i> Отзывы
       </a>
     </nav>
 

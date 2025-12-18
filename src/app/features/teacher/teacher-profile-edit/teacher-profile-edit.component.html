@@ -19,10 +19,16 @@
           <i class="fas fa-user-edit"></i> Настройки профиля
         </a>
         <a [routerLink]="['/me', 'home']" routerLinkActive="active">
-          <i class="fas fa-home"></i> Главная (Посты)
+          <i class="fas fa-blog"></i> Мой блог
         </a>
         <a [routerLink]="['/me', 'master-classes']" routerLinkActive="active">
           <i class="fas fa-graduation-cap"></i> Мастер-классы
+        </a>
+        <a [routerLink]="['/me', 'publications']" routerLinkActive="active">
+          <i class="fas fa-file-alt"></i> Публикации
+        </a>
+        <a [routerLink]="['/me', 'certificates']" routerLinkActive="active">
+          <i class="fas fa-certificate"></i> Сертификаты
         </a>
         <a [routerLink]="['/me', 'presentations']" routerLinkActive="active">
           <i class="fas fa-file-powerpoint"></i> Презентации
@@ -61,6 +67,48 @@
               <img [src]="placeholder.getImageUrl(profile.photoUrl, 'avatar')" alt="Profile photo"
                 class="profile-photo-preview" (error)="onImageError($event)" />
               <input type="file" accept="image/*" (change)="onPhotoUpload($event)" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-video"></i> Видео визитка
+            </label>
+            <div class="video-visitka-section">
+              <div class="video-method-toggle">
+                <button type="button" class="toggle-btn" [class.active]="!useVideoUpload" (click)="switchToVideoUrl()">
+                  <i class="fas fa-link"></i> URL
+                </button>
+                <button type="button" class="toggle-btn" [class.active]="useVideoUpload"
+                  (click)="switchToVideoFileUpload()">
+                  <i class="fas fa-upload"></i> Загрузить файл
+                </button>
+              </div>
+              <div *ngIf="!useVideoUpload" class="video-url-input">
+                <input type="url" class="form-control" [(ngModel)]="profile.videoUrl" name="videoUrl"
+                  placeholder="https://youtube.com/watch?v=... или https://youtu.be/..." />
+                <small class="form-hint">Поддерживаются YouTube, Vimeo и другие видеохостинги</small>
+              </div>
+              <div *ngIf="useVideoUpload" class="video-file-input">
+                <input type="file" class="form-control" (change)="onVideoFileSelect($event)" accept="video/*"
+                  #videoFileInput />
+                <small class="form-hint" *ngIf="selectedVideoFile">
+                  Выбран файл: {{ selectedVideoFile.name }} ({{ (selectedVideoFile.size / 1024 / 1024).toFixed(2) }} MB)
+                </small>
+                <small class="form-hint" *ngIf="!selectedVideoFile">
+                  Поддерживаемые форматы: MP4, WebM, MOV (макс. 100 MB)
+                </small>
+              </div>
+              <div *ngIf="profile.videoUrl" class="video-preview">
+                <video [src]="profile.videoUrl" controls class="video-preview-player"
+                  *ngIf="!isVideoUrl(profile.videoUrl)"></video>
+                <div *ngIf="isVideoUrl(profile.videoUrl)" class="video-url-preview">
+                  <i class="fas fa-video"></i>
+                  <span>Видео визитка: {{ profile.videoUrl }}</span>
+                  <button type="button" class="btn-remove-video" (click)="removeVideo()" title="Удалить видео">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="form-group">

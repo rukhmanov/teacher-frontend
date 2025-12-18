@@ -177,6 +177,127 @@
   }
 }
 
+.video-visitka-section {
+  .video-method-toggle {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    .toggle-btn {
+      flex: 1;
+      padding: 0.875rem 1.5rem;
+      background: var(--bg-cream);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      color: var(--text-brown);
+
+      &:hover {
+        background: var(--bg-beige);
+        border-color: rgba(255, 107, 107, 0.3);
+      }
+
+      &.active {
+        background: linear-gradient(135deg, var(--primary-orange) 0%, #ff6b6b 100%);
+        color: white;
+        border-color: var(--primary-orange);
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+      }
+
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  .video-url-input,
+  .video-file-input {
+    margin-bottom: 1rem;
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+      }
+    }
+  }
+
+  .video-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-cream);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 107, 107, 0.2);
+
+    .video-preview-player {
+      width: 100%;
+      max-width: 600px;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .video-url-preview {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--white);
+      border-radius: 8px;
+
+      i {
+        color: var(--primary-orange);
+        font-size: 1.5rem;
+      }
+
+      span {
+        flex: 1;
+        color: var(--text-dark);
+        word-break: break-all;
+      }
+
+      .btn-remove-video {
+        padding: 0.5rem;
+        background: rgba(255, 107, 107, 0.1);
+        border: 2px solid rgba(255, 107, 107, 0.3);
+        border-radius: 50%;
+        color: #ff6b6b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+
+        &:hover {
+          background: #ff6b6b;
+          color: white;
+          border-color: #ff6b6b;
+          transform: scale(1.1);
+        }
+
+        i {
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+}
+
 .add-link-form {
   margin-bottom: 2rem;
   padding-bottom: 2rem;

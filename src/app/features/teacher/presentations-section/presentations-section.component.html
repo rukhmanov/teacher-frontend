@@ -67,6 +67,15 @@
   <div class="presentations-list">
     <div *ngFor="let presentation of presentations" class="presentation-card card"
       [style.background-color]="presentation.cardColor || null">
+      <!-- Превью презентации -->
+      <div *ngIf="getPreviewUrl(presentation.fileUrl) || presentation.previewImage || presentation.coverImage"
+        class="presentation-preview">
+        <img *ngIf="presentation.previewImage || presentation.coverImage"
+          [src]="presentation.previewImage || presentation.coverImage" [alt]="presentation.title"
+          class="preview-image" />
+        <iframe *ngIf="getPreviewUrl(presentation.fileUrl) && !presentation.previewImage && !presentation.coverImage"
+          [src]="getPreviewUrl(presentation.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
+      </div>
       <h3>{{ presentation.title }}</h3>
       <p *ngIf="presentation.description">{{ getTruncatedDescription(presentation.description) }}</p>
       <div class="card-footer">
@@ -74,6 +83,10 @@
           <i class="fas fa-expand"></i> Показать все
         </button>
         <div class="presentation-actions">
+          <button *ngIf="canViewInBrowser(presentation.fileUrl)" class="btn btn-primary"
+            (click)="openViewerModal(presentation)" title="Просмотреть в браузере">
+            <i class="fas fa-eye"></i> <span>Просмотреть</span>
+          </button>
           <a [href]="presentation.fileUrl" target="_blank" class="btn btn-primary">
             <i class="fas fa-download"></i> <span>Скачать</span>
           </a>
@@ -110,12 +123,51 @@
         <h2>{{ selectedPresentation.title }}</h2>
       </div>
       <div class="modal-body">
+        <!-- Превью в модальном окне -->
+        <div
+          *ngIf="getPreviewUrl(selectedPresentation.fileUrl) || selectedPresentation.previewImage || selectedPresentation.coverImage"
+          class="modal-preview">
+          <img *ngIf="selectedPresentation.previewImage || selectedPresentation.coverImage"
+            [src]="selectedPresentation.previewImage || selectedPresentation.coverImage"
+            [alt]="selectedPresentation.title" class="modal-preview-image" />
+          <iframe
+            *ngIf="getPreviewUrl(selectedPresentation.fileUrl) && !selectedPresentation.previewImage && !selectedPresentation.coverImage"
+            [src]="getPreviewUrl(selectedPresentation.fileUrl)!" class="modal-preview-iframe" frameborder="0"
+            allowfullscreen></iframe>
+        </div>
         <p *ngIf="selectedPresentation.description" class="modal-text">
           {{ selectedPresentation.description }}
         </p>
         <div class="modal-actions">
+          <button *ngIf="canViewInBrowser(selectedPresentation.fileUrl)" class="btn btn-primary"
+            (click)="openViewerModal(selectedPresentation)">
+            <i class="fas fa-eye"></i> Просмотреть в браузере
+          </button>
           <a [href]="selectedPresentation.fileUrl" target="_blank" class="btn btn-primary">
             <i class="fas fa-download"></i> Скачать презентацию
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для просмотра презентации в браузере -->
+  <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerPresentation">
+      <div class="viewer-modal-header">
+        <h2>{{ viewerPresentation.title }}</h2>
+        <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="viewer-modal-body">
+        <iframe *ngIf="getViewerUrl(viewerPresentation.fileUrl)" [src]="getViewerUrl(viewerPresentation.fileUrl)!"
+          class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        <div *ngIf="!getViewerUrl(viewerPresentation.fileUrl)" class="viewer-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
+          <a [href]="viewerPresentation.fileUrl" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i> Скачать файл
           </a>
         </div>
       </div>

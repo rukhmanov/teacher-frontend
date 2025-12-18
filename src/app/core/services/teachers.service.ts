@@ -7,6 +7,7 @@ import {
   Post,
   MasterClass,
   Presentation,
+  Publication,
   ParentSection,
   LifeInDOU,
   SocialLink,
@@ -166,6 +167,51 @@ export class TeachersService {
   deletePresentation(id: string): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/teachers/me/presentations/${id}`,
+    );
+  }
+
+  // Publications
+  getPublications(username: string): Observable<Publication[]>;
+  getPublications(teacherId?: string): Observable<Publication[]>;
+  getPublications(
+    usernameOrTeacherId?: string,
+  ): Observable<Publication[]> {
+    if (usernameOrTeacherId) {
+      return this.http.get<Publication[]>(
+        `${this.apiUrl}/teachers/${usernameOrTeacherId}/publications`,
+      );
+    }
+    return this.http.get<Publication[]>(
+      `${this.apiUrl}/teachers/me/publications`,
+    );
+  }
+
+  getOwnPublications(): Observable<Publication[]> {
+    return this.http.get<Publication[]>(
+      `${this.apiUrl}/teachers/me/publications`,
+    );
+  }
+
+  createPublication(data: Partial<Publication>): Observable<Publication> {
+    return this.http.post<Publication>(
+      `${this.apiUrl}/teachers/me/publications`,
+      data,
+    );
+  }
+
+  updatePublication(
+    id: string,
+    data: Partial<Publication>,
+  ): Observable<Publication> {
+    return this.http.put<Publication>(
+      `${this.apiUrl}/teachers/me/publications/${id}`,
+      data,
+    );
+  }
+
+  deletePublication(id: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/teachers/me/publications/${id}`,
     );
   }
 

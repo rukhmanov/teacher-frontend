@@ -5,23 +5,23 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
-import { Presentation } from '../../../core/models/teacher.interface';
+import { Publication } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 
 @Component({
-  selector: 'app-presentations-section',
+  selector: 'app-publications-section',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './presentations-section.component.html',
-  styleUrl: './presentations-section.component.scss',
+  templateUrl: './publications-section.component.html',
+  styleUrl: './publications-section.component.scss',
 })
-export class PresentationsSectionComponent implements OnInit {
-  presentations: Presentation[] = [];
+export class PublicationsSectionComponent implements OnInit {
+  publications: Publication[] = [];
   username: string = '';
   isEditMode = false;
   showForm = false;
-  editingPresentationId: string | null = null;
-  newPresentation: Partial<Presentation> = { title: '', description: '', fileUrl: '', cardColor: '' };
+  editingPublicationId: string | null = null;
+  newPublication: Partial<Publication> = { title: '', description: '', fileUrl: '', cardColor: '', type: 'publication' }; // Только публикации
   selectedFile: File | null = null;
   useFileUpload = false;
   isUploading = false;
@@ -29,9 +29,9 @@ export class PresentationsSectionComponent implements OnInit {
 
   // Модальное окно
   showModal: boolean = false;
-  selectedPresentation: Presentation | null = null;
+  selectedPublication: Publication | null = null;
   showViewerModal: boolean = false;
-  viewerPresentation: Presentation | null = null;
+  viewerPublication: Publication | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,28 +45,30 @@ export class PresentationsSectionComponent implements OnInit {
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
       if (this.username) {
-        this.loadPublicPresentations();
+        this.loadPublicPublications();
       } else {
         this.isEditMode = true;
-        this.loadOwnPresentations();
+        this.loadOwnPublications();
       }
     });
   }
 
-  loadPublicPresentations() {
+  loadPublicPublications() {
     if (this.username) {
-      this.teachersService.getPresentations(this.username).subscribe({
-        next: (presentations) => {
-          this.presentations = presentations;
+      this.teachersService.getPublications(this.username).subscribe({
+        next: (publications) => {
+          // Фильтруем только публикации
+          this.publications = publications.filter(p => !p.type || p.type === 'publication');
         },
       });
     }
   }
 
-  loadOwnPresentations() {
-    this.teachersService.getOwnPresentations().subscribe({
-      next: (presentations) => {
-        this.presentations = presentations;
+  loadOwnPublications() {
+    this.teachersService.getOwnPublications().subscribe({
+      next: (publications) => {
+        // Фильтруем только публикации
+        this.publications = publications.filter(p => !p.type || p.type === 'publication');
       },
     });
   }
@@ -85,19 +87,19 @@ export class PresentationsSectionComponent implements OnInit {
 
   switchToFileUpload() {
     this.useFileUpload = true;
-    this.newPresentation.fileUrl = '';
+    this.newPublication.fileUrl = '';
   }
 
-  createPresentation() {
-    if (!this.newPresentation.title) {
-      alert('Пожалуйста, укажите название презентации');
+  createPublication() {
+    if (!this.newPublication.title) {
+      alert('Пожалуйста, укажите название');
       return;
     }
 
-    this.continuePresentationCreation();
+    this.continuePublicationCreation();
   }
 
-  private continuePresentationCreation() {
+  private continuePublicationCreation() {
     // Если выбран режим загрузки файла
     if (this.useFileUpload) {
       if (!this.selectedFile) {
@@ -108,8 +110,8 @@ export class PresentationsSectionComponent implements OnInit {
       this.isUploading = true;
       this.uploadService.uploadFile(this.selectedFile).subscribe({
         next: (response) => {
-          this.newPresentation.fileUrl = response.url;
-          this.createPresentationWithUrl();
+          this.newPublication.fileUrl = response.url;
+          this.createPublicationWithUrl();
         },
         error: () => {
           this.isUploading = false;
@@ -118,20 +120,20 @@ export class PresentationsSectionComponent implements OnInit {
       });
     } else {
       // Режим URL
-      if (!this.newPresentation.fileUrl) {
+      if (!this.newPublication.fileUrl) {
         alert('Пожалуйста, укажите URL файла');
         this.isUploading = false;
         return;
       }
-      this.createPresentationWithUrl();
+      this.createPublicationWithUrl();
     }
   }
 
-  private createPresentationWithUrl() {
-    if (this.editingPresentationId) {
-      this.teachersService.updatePresentation(this.editingPresentationId, this.newPresentation as any).subscribe({
+  private createPublicationWithUrl() {
+    if (this.editingPublicationId) {
+      this.teachersService.updatePublication(this.editingPublicationId, this.newPublication as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPublications();
           this.cancelEdit();
         },
         error: () => {
@@ -142,9 +144,9 @@ export class PresentationsSectionComponent implements OnInit {
         },
       });
     } else {
-      this.teachersService.createPresentation(this.newPresentation as any).subscribe({
+      this.teachersService.createPublication(this.newPublication as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPublications();
           this.cancelEdit();
         },
         error: () => {
@@ -157,13 +159,14 @@ export class PresentationsSectionComponent implements OnInit {
     }
   }
 
-  editPresentation(presentation: Presentation) {
-    this.editingPresentationId = presentation.id;
-    this.newPresentation = {
-      title: presentation.title,
-      description: presentation.description,
-      fileUrl: presentation.fileUrl,
-      cardColor: presentation.cardColor || '',
+  editPublication(publication: Publication) {
+    this.editingPublicationId = publication.id;
+    this.newPublication = {
+      title: publication.title,
+      description: publication.description,
+      fileUrl: publication.fileUrl,
+      cardColor: publication.cardColor || '',
+      type: publication.type || 'publication',
     };
     this.selectedFile = null;
     this.useFileUpload = false;
@@ -172,25 +175,25 @@ export class PresentationsSectionComponent implements OnInit {
 
   cancelEdit() {
     this.showForm = false;
-    this.editingPresentationId = null;
+    this.editingPublicationId = null;
     this.resetForm();
   }
 
   private resetForm() {
-    this.newPresentation = { title: '', description: '', fileUrl: '', cardColor: '' };
+    this.newPublication = { title: '', description: '', fileUrl: '', cardColor: '', type: 'publication' };
     this.selectedFile = null;
     this.useFileUpload = false;
   }
 
   removeCardColor() {
-    this.newPresentation.cardColor = '';
+    this.newPublication.cardColor = '';
   }
 
-  deletePresentation(id: string) {
-    if (confirm('Удалить эту презентацию?')) {
-      this.teachersService.deletePresentation(id).subscribe({
+  deletePublication(id: string) {
+    if (confirm('Удалить эту публикацию/сертификат?')) {
+      this.teachersService.deletePublication(id).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPublications();
         },
       });
     }
@@ -201,31 +204,31 @@ export class PresentationsSectionComponent implements OnInit {
     return description.length > 200 ? description.substring(0, 200) + '...' : description;
   }
 
-  shouldShowFullButton(presentation: Presentation): boolean {
-    return !!(presentation.description && presentation.description.length > 200);
+  shouldShowFullButton(publication: Publication): boolean {
+    return !!(publication.description && publication.description.length > 200);
   }
 
-  openModal(presentation: Presentation): void {
-    this.selectedPresentation = presentation;
+  openModal(publication: Publication): void {
+    this.selectedPublication = publication;
     this.showModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   closeModal(): void {
     this.showModal = false;
-    this.selectedPresentation = null;
+    this.selectedPublication = null;
     document.body.style.overflow = '';
   }
 
-  openViewerModal(presentation: Presentation): void {
-    this.viewerPresentation = presentation;
+  openViewerModal(publication: Publication): void {
+    this.viewerPublication = publication;
     this.showViewerModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   closeViewerModal(): void {
     this.showViewerModal = false;
-    this.viewerPresentation = null;
+    this.viewerPublication = null;
     document.body.style.overflow = '';
   }
 
@@ -283,14 +286,19 @@ export class PresentationsSectionComponent implements OnInit {
     return this.getViewerUrl(fileUrl) !== null;
   }
 
-  openInBrowser(presentation: Presentation): void {
-    const viewerUrl = this.getViewerUrl(presentation.fileUrl);
+  openInBrowser(publication: Publication): void {
+    const viewerUrl = this.getViewerUrl(publication.fileUrl);
     if (viewerUrl) {
       // SafeResourceUrl имеет свойство changingThisBreaksApplicationSecurity для получения строки
       window.open((viewerUrl as any).changingThisBreaksApplicationSecurity || viewerUrl.toString(), '_blank');
     }
   }
+
+  getTypeLabel(type: string | undefined): string {
+    return type === 'certificate' ? 'Сертификат' : 'Публикация';
+  }
+
+  getTypeIcon(type: string | undefined): string {
+    return type === 'certificate' ? 'fa-certificate' : 'fa-file-alt';
+  }
 }
-
-
-

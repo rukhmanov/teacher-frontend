@@ -87,9 +87,9 @@
                 <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
                   (error)="onImageError($event)"
                   (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))"
-                  class="clickable-image" />
-                <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls
-                  (error)="onImageError($event)"></video>
+                  class="clickable-image" loading="lazy" />
+                <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"
+                  preload="none"></video>
                 <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
                 <div *ngIf="isEditMode" class="media-actions" (click)="$event.stopPropagation()">
                   <button class="btn-move-media" (click)="toggleMoveMenu(mediaItem.url, $event)" title="Переместить">
@@ -128,8 +128,10 @@
       <div class="media-wrapper">
         <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
           (error)="onImageError($event)"
-          (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))" class="clickable-image" />
-        <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"></video>
+          (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))" class="clickable-image"
+          loading="lazy" />
+        <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls (error)="onImageError($event)"
+          preload="none"></video>
         <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
         <div *ngIf="isEditMode" class="media-actions" (click)="$event.stopPropagation()">
           <button class="btn-move-media" (click)="toggleMoveMenu(mediaItem.url, $event)" title="Переместить">
@@ -158,8 +160,8 @@
         <div class="media-wrapper">
           <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url)" alt="Photo"
             (error)="onImageError($event)"
-            (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))"
-            class="clickable-image" />
+            (click)="openImageCarousel(getPhotoUrls(), getPhotoUrls().indexOf(mediaItem.url))" class="clickable-image"
+            loading="lazy" />
           <video *ngIf="mediaItem.type === 'video'" [src]="mediaItem.url" controls
             (error)="onImageError($event)"></video>
           <div *ngIf="mediaItem.caption" class="media-caption">{{ mediaItem.caption }}</div>
