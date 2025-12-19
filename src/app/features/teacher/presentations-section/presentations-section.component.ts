@@ -38,6 +38,9 @@ export class PresentationsSectionComponent implements OnInit {
   private readonly take = 5;
   hasMore = true;
   isLoading = false;
+  
+  // Развернутые карточки
+  expandedCards: Set<string> = new Set();
 
   constructor(
     private route: ActivatedRoute,
@@ -262,13 +265,34 @@ export class PresentationsSectionComponent implements OnInit {
     }
   }
 
+  isCardExpanded(presentationId: string): boolean {
+    return this.expandedCards.has(presentationId);
+  }
+
+  toggleCardExpansion(presentationId: string): void {
+    if (this.expandedCards.has(presentationId)) {
+      this.expandedCards.delete(presentationId);
+    } else {
+      this.expandedCards.add(presentationId);
+    }
+  }
+
+  shouldShowExpandButton(presentation: Presentation): boolean {
+    if (!presentation.description) return false;
+    // Проверяем, что текст достаточно длинный для обрезки (примерно 150+ символов)
+    return presentation.description.length > 150;
+  }
+
   getTruncatedDescription(description: string | undefined): string {
     if (!description) return '';
     return description.length > 200 ? description.substring(0, 200) + '...' : description;
   }
 
   shouldShowFullButton(presentation: Presentation): boolean {
-    return !!(presentation.description && presentation.description.length > 200);
+    // Показываем кнопку "Показать все" только если есть другие причины открыть модальное окно
+    // Но не показываем, если уже есть кнопка развернуть/свернуть
+    if (this.shouldShowExpandButton(presentation)) return false;
+    return false; // В презентациях обычно не нужно открывать модальное окно, только развернуть текст
   }
 
   openModal(presentation: Presentation): void {

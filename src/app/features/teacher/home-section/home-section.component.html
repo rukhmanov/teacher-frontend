@@ -41,12 +41,14 @@
             </div>
             <div *ngIf="useFileUpload" class="file-upload-group">
               <input type="file" class="form-control" (change)="onFileSelect($event)"
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput />
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.mp4,.webm,.ogg,.mov,.avi,.mkv"
+                #fileInput />
               <small class="form-hint" *ngIf="selectedFile">
                 Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
               </small>
               <small class="form-hint" *ngIf="!selectedFile">
-                Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, изображения, видео (макс. 50 MB)
+                Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, изображения (JPG, PNG, GIF, WEBP,
+                BMP, SVG), видео (MP4, WEBM, OGG, MOV, AVI, MKV) (макс. 50 MB)
               </small>
             </div>
             <!-- Превью файла (только для изображений и видео) -->
@@ -88,7 +90,9 @@
             </span>
           </div>
           <div class="post-content">
-            <p class="post-text">{{ getTruncatedContent(post.content) }}</p>
+            <p *ngIf="post.content" [class.expanded]="isCardExpanded(post.id!)" class="post-text description-text">
+              {{ post.content }}
+            </p>
             <div *ngIf="post.images && post.images.length > 0" class="post-images">
               <ng-container *ngFor="let image of post.images; let i = index">
                 <img *ngIf="i < 3" [src]="getImageUrl(image, 'post')" alt="Post image"
@@ -108,15 +112,28 @@
             </div>
           </div>
           <div class="post-footer">
-            <button *ngIf="shouldShowFullButton(post)" class="btn-expand" (click)="openPostModal(post)">
+            <button *ngIf="shouldShowExpandButton(post)" class="btn-expand" (click)="toggleCardExpansion(post.id!)">
+              <i class="fas" [class.fa-chevron-down]="!isCardExpanded(post.id!)"
+                [class.fa-chevron-up]="isCardExpanded(post.id!)"></i>
+              {{ isCardExpanded(post.id!) ? 'Свернуть' : 'Смотреть все' }}
+            </button>
+            <button *ngIf="shouldShowFullButton(post) && !shouldShowExpandButton(post)" class="btn-expand"
+              (click)="openPostModal(post)">
               <i class="fas fa-eye"></i>
               <span>Показать все</span>
             </button>
-            <div *ngIf="isEditMode" class="post-actions">
-              <button class="btn btn-primary" (click)="editPost(post)">
+            <div class="post-actions">
+              <button *ngIf="post.fileUrl && canViewInBrowser(post.fileUrl)" class="btn btn-primary"
+                (click)="openViewerModal(post)" title="Просмотреть в браузере">
+                <i class="fas fa-eye"></i> <span>Просмотреть</span>
+              </button>
+              <a *ngIf="post.fileUrl" [href]="post.fileUrl" target="_blank" class="btn btn-primary">
+                <i class="fas fa-download"></i> <span>Скачать</span>
+              </a>
+              <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPost(post)">
                 <i class="fas fa-edit"></i> <span>Редактировать</span>
               </button>
-              <button class="btn btn-secondary" (click)="deletePost(post.id)">
+              <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePost(post.id)">
                 <i class="fas fa-trash"></i> <span>Удалить</span>
               </button>
             </div>
@@ -170,12 +187,58 @@
             alt="Post image" (error)="onImageError($event, 'post')"
             (click)="openImageCarousel(selectedPost.images || [], i)" class="clickable-image" />
         </div>
-        <div *ngIf="selectedPost.fileUrl && getPreviewUrl(selectedPost.fileUrl) && isImageFile(selectedPost.fileUrl)"
-          class="modal-file-preview">
-          <img [src]="getSafeUrl(selectedPost.fileUrl)" alt="File preview" class="clickable-image"
-            (click)="openImageCarousel([selectedPost.fileUrl], 0)" />
+        <div *ngIf="selectedPost.fileUrl && getPreviewUrl(selectedPost.fileUrl)" class="modal-file-preview">
+          <img *ngIf="isImageFile(selectedPost.fileUrl)" [src]="getSafeUrl(selectedPost.fileUrl)" alt="File preview"
+            class="clickable-image" (click)="openImageCarousel([selectedPost.fileUrl], 0)" />
+          <video *ngIf="isVideoFile(selectedPost.fileUrl)" [src]="getSafeUrl(selectedPost.fileUrl)" controls
+            class="preview-video"></video>
         </div>
         <p class="modal-text">{{ selectedPost.content }}</p>
+        <div class="modal-actions" *ngIf="selectedPost.fileUrl">
+          <button *ngIf="canViewInBrowser(selectedPost.fileUrl)" class="btn btn-primary"
+            (click)="openViewerModal(selectedPost)">
+            <i class="fas fa-eye"></i> Просмотреть в браузере
+          </button>
+          <a [href]="selectedPost.fileUrl" target="_blank" class="btn btn-primary">
+            <i class="fas fa-download"></i> Скачать файл
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для просмотра файла в браузере -->
+  <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerPost">
+      <div class="viewer-modal-header">
+        <h2>{{ viewerPost.title }}</h2>
+        <div class="viewer-header-actions">
+          <a [href]="viewerPost.fileUrl" target="_blank" download class="btn-download" title="Скачать файл">
+            <i class="fas fa-download"></i>
+          </a>
+          <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="viewer-modal-body">
+        <!-- Для изображений используем img -->
+        <img *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && isImageFile(viewerPost.fileUrl)"
+          [src]="viewerPost.fileUrl" [alt]="viewerPost.title" class="viewer-image" />
+        <!-- Для видео используем video -->
+        <video *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && isVideoFile(viewerPost.fileUrl)"
+          [src]="viewerPost.fileUrl" class="viewer-video" controls></video>
+        <!-- Для других файлов используем iframe -->
+        <iframe
+          *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && !isImageFile(viewerPost.fileUrl) && !isVideoFile(viewerPost.fileUrl)"
+          [src]="getViewerUrl(viewerPost.fileUrl)!" class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        <div *ngIf="viewerPost.fileUrl && !getViewerUrl(viewerPost.fileUrl)" class="viewer-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
+          <a [href]="viewerPost.fileUrl" target="_blank" download class="btn btn-primary">
+            <i class="fas fa-download"></i> Скачать файл
+          </a>
+        </div>
       </div>
     </div>
   </div>

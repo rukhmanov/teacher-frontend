@@ -67,19 +67,19 @@
   <div class="presentations-list">
     <div *ngFor="let presentation of presentations" class="presentation-card card"
       [style.background-color]="presentation.cardColor || null">
-      <!-- Превью презентации -->
-      <div *ngIf="getPreviewUrl(presentation.fileUrl) || presentation.previewImage || presentation.coverImage"
-        class="presentation-preview">
-        <img *ngIf="presentation.previewImage || presentation.coverImage"
-          [src]="presentation.previewImage || presentation.coverImage" [alt]="presentation.title"
-          class="preview-image" />
-        <iframe *ngIf="getPreviewUrl(presentation.fileUrl) && !presentation.previewImage && !presentation.coverImage"
-          [src]="getPreviewUrl(presentation.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
-      </div>
       <h3>{{ presentation.title }}</h3>
-      <p *ngIf="presentation.description">{{ getTruncatedDescription(presentation.description) }}</p>
+      <p *ngIf="presentation.description" [class.expanded]="isCardExpanded(presentation.id!)" class="description-text">
+        {{ presentation.description }}
+      </p>
       <div class="card-footer">
-        <button *ngIf="shouldShowFullButton(presentation)" class="btn-expand" (click)="openModal(presentation)">
+        <button *ngIf="shouldShowExpandButton(presentation)" class="btn-expand"
+          (click)="toggleCardExpansion(presentation.id!)">
+          <i class="fas" [class.fa-chevron-down]="!isCardExpanded(presentation.id!)"
+            [class.fa-chevron-up]="isCardExpanded(presentation.id!)"></i>
+          {{ isCardExpanded(presentation.id!) ? 'Свернуть' : 'Смотреть все' }}
+        </button>
+        <button *ngIf="shouldShowFullButton(presentation) && !shouldShowExpandButton(presentation)" class="btn-expand"
+          (click)="openModal(presentation)">
           <i class="fas fa-expand"></i> Показать все
         </button>
         <div class="presentation-actions">
@@ -131,18 +131,6 @@
         <h2>{{ selectedPresentation.title }}</h2>
       </div>
       <div class="modal-body">
-        <!-- Превью в модальном окне -->
-        <div
-          *ngIf="getPreviewUrl(selectedPresentation.fileUrl) || selectedPresentation.previewImage || selectedPresentation.coverImage"
-          class="modal-preview">
-          <img *ngIf="selectedPresentation.previewImage || selectedPresentation.coverImage"
-            [src]="selectedPresentation.previewImage || selectedPresentation.coverImage"
-            [alt]="selectedPresentation.title" class="modal-preview-image" />
-          <iframe
-            *ngIf="getPreviewUrl(selectedPresentation.fileUrl) && !selectedPresentation.previewImage && !selectedPresentation.coverImage"
-            [src]="getPreviewUrl(selectedPresentation.fileUrl)!" class="modal-preview-iframe" frameborder="0"
-            allowfullscreen></iframe>
-        </div>
         <p *ngIf="selectedPresentation.description" class="modal-text">
           {{ selectedPresentation.description }}
         </p>

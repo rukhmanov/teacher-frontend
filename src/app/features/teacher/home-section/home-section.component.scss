@@ -495,9 +495,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 400px;
-  max-height: 600px;
   
   // Позволяем inline стилям переопределять background
   &[style*="background-color"],
@@ -570,12 +567,12 @@
 
   .post-content {
     position: relative;
-    flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 
-    .post-text {
+    .post-text,
+    .description-text {
       white-space: pre-wrap;
       line-height: 1.8;
       color: var(--text-dark);
@@ -583,8 +580,14 @@
       margin-bottom: 1rem;
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 4;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
+      transition: all 0.3s ease;
+
+      &.expanded {
+        -webkit-line-clamp: unset;
+        display: block;
+      }
     }
   }
 
@@ -613,7 +616,6 @@
   }
 
   .post-footer {
-    margin-top: auto;
     padding-top: 1rem;
     border-top: 2px solid rgba(255, 107, 107, 0.1);
     display: flex;
@@ -806,15 +808,13 @@
   }
 
   .post-card {
-    min-height: 350px;
-    max-height: 500px;
+    // Высота определяется контентом
   }
 }
 
 @media (max-width: 480px) {
   .post-card {
-    min-height: 300px;
-    max-height: 450px;
+    // Высота определяется контентом
 
     .post-header {
       h3 {
@@ -1042,6 +1042,201 @@
 
     .modal-images {
       grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Модальное окно для просмотра файла в браузере
+.viewer-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+  overflow: hidden;
+}
+
+.viewer-modal-content {
+  background: #1a1a1a;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+.viewer-modal-header {
+  padding: 1.5rem 2rem;
+  background: #2a2a2a;
+  border-bottom: 2px solid rgba(255, 107, 107, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+
+  h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+    flex: 1;
+  }
+
+  .viewer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .btn-download {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: rgba(255, 107, 107, 0.3);
+      transform: scale(1.1);
+    }
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.viewer-modal-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+  }
+}
+
+.viewer-modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #1a1a1a;
+
+  .viewer-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    min-width: 100%;
+  }
+
+  .viewer-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .viewer-video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .viewer-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 3rem;
+    text-align: center;
+    color: white;
+
+    i {
+      font-size: 3rem;
+      color: rgba(255, 107, 107, 0.7);
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .btn {
+      margin-top: 1rem;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .viewer-modal-header {
+    padding: 1rem 1.5rem;
+
+    h2 {
+      font-size: 1.2rem;
+    }
+  }
+
+  .viewer-modal-body {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    
+    .viewer-iframe {
+      min-width: 800px;
+      width: 800px;
+      height: 100%;
     }
   }
 }

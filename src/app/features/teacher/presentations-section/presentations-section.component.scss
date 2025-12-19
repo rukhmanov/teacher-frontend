@@ -282,9 +282,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 400px;
-  max-height: 600px;
   
   // Fallback background, если нет inline стилей
   background-color: var(--bg-cream);
@@ -380,15 +377,22 @@
     flex-shrink: 0;
   }
 
-  p {
+  p,
+  .description-text {
     color: var(--text-brown);
     margin-bottom: 1rem;
     flex: 1;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 6;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     line-height: 1.6;
+    transition: all 0.3s ease;
+
+    &.expanded {
+      -webkit-line-clamp: unset;
+      display: block;
+    }
   }
 
   .card-footer {

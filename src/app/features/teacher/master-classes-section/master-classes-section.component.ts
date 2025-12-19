@@ -48,6 +48,11 @@ export class MasterClassesSectionComponent implements OnInit {
   // Модальное окно
   showModal: boolean = false;
   selectedMasterClass: MasterClass | null = null;
+  showViewerModal: boolean = false;
+  viewerMasterClass: MasterClass | null = null;
+  
+  // Развернутые карточки
+  expandedCards: Set<string> = new Set();
 
   // Пагинация и бесконечный скролл
   private skip = 0;
@@ -336,6 +341,54 @@ export class MasterClassesSectionComponent implements OnInit {
     this.useFileUpload = false;
   }
 
+  getViewerUrl(fileUrl: string): SafeResourceUrl | null {
+    if (!fileUrl) return null;
+    
+    const url = fileUrl.toLowerCase();
+    let viewerUrl: string | null = null;
+    
+    // Для изображений и видео возвращаем прямой URL
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
+      viewerUrl = fileUrl;
+    }
+    // Для Word документов используем Office Online Viewer
+    else if (url.endsWith('.doc') || url.endsWith('.docx')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PPTX/PPT используем Office Online Viewer
+    else if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PDF используем Google Docs Viewer
+    else if (url.endsWith('.pdf')) {
+      viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    }
+    
+    return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
+  }
+
+  canViewInBrowser(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    // Поддерживаем изображения, видео, Word документы, PDF, PPTX/PPT
+    return this.isImageFile(fileUrl) || this.isVideoFile(fileUrl) ||
+           url.endsWith('.doc') || url.endsWith('.docx') || 
+           url.endsWith('.pdf') || 
+           url.endsWith('.pptx') || url.endsWith('.ppt');
+  }
+
+  openViewerModal(masterClass: MasterClass): void {
+    this.viewerMasterClass = masterClass;
+    this.showViewerModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeViewerModal(): void {
+    this.showViewerModal = false;
+    this.viewerMasterClass = null;
+    document.body.style.overflow = '';
+  }
+
   getSafeUrl(fileUrl: string): string {
     if (!fileUrl) return '';
     const preview = this.getPreviewUrl(fileUrl);
@@ -359,16 +412,37 @@ export class MasterClassesSectionComponent implements OnInit {
     }
   }
 
+  isCardExpanded(masterClassId: string): boolean {
+    return this.expandedCards.has(masterClassId);
+  }
+
+  toggleCardExpansion(masterClassId: string): void {
+    if (this.expandedCards.has(masterClassId)) {
+      this.expandedCards.delete(masterClassId);
+    } else {
+      this.expandedCards.add(masterClassId);
+    }
+  }
+
+  shouldShowExpandButton(masterClass: MasterClass): boolean {
+    // Проверяем description или content
+    const text = masterClass.description || masterClass.content || '';
+    if (!text) return false;
+    // Проверяем, что текст достаточно длинный для обрезки (примерно 150+ символов)
+    return text.length > 150;
+  }
+
   getTruncatedContent(content: string | undefined): string {
     if (!content) return '';
     return content.length > 200 ? content.substring(0, 200) + '...' : content;
   }
 
   shouldShowFullButton(masterClass: MasterClass): boolean {
-    const hasLongContent = masterClass.content && masterClass.content.length > 200;
-    const hasDescription = masterClass.description && masterClass.description.length > 100;
-    const hasManyImages = masterClass.images && masterClass.images.length > 3;
-    return !!(hasLongContent || hasDescription || hasManyImages);
+    // Показываем кнопку "Показать все" только если много изображений или есть другие причины открыть модальное окно
+    // Но не показываем, если уже есть кнопка развернуть/свернуть
+    if (this.shouldShowExpandButton(masterClass)) return false;
+    const hasManyImages = !!(masterClass.images && masterClass.images.length > 3);
+    return hasManyImages;
   }
 
   openModal(masterClass: MasterClass): void {

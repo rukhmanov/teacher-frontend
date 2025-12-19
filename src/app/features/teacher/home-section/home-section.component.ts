@@ -50,6 +50,11 @@ export class HomeSectionComponent implements OnInit {
   // Модальное окно поста
   showPostModal: boolean = false;
   selectedPost: Post | null = null;
+  showViewerModal: boolean = false;
+  viewerPost: Post | null = null;
+  
+  // Развернутые карточки
+  expandedCards: Set<string> = new Set();
 
   // Пагинация и бесконечный скролл
   private skip = 0;
@@ -275,6 +280,54 @@ export class HomeSectionComponent implements OnInit {
     return null;
   }
 
+  getViewerUrl(fileUrl: string): SafeResourceUrl | null {
+    if (!fileUrl) return null;
+    
+    const url = fileUrl.toLowerCase();
+    let viewerUrl: string | null = null;
+    
+    // Для изображений и видео возвращаем прямой URL
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
+      viewerUrl = fileUrl;
+    }
+    // Для Word документов используем Office Online Viewer
+    else if (url.endsWith('.doc') || url.endsWith('.docx')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PPTX/PPT используем Office Online Viewer
+    else if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
+      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    }
+    // Для PDF используем Google Docs Viewer
+    else if (url.endsWith('.pdf')) {
+      viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    }
+    
+    return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
+  }
+
+  canViewInBrowser(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    // Поддерживаем изображения, видео, Word документы, PDF, PPTX/PPT
+    return this.isImageFile(fileUrl) || this.isVideoFile(fileUrl) ||
+           url.endsWith('.doc') || url.endsWith('.docx') || 
+           url.endsWith('.pdf') || 
+           url.endsWith('.pptx') || url.endsWith('.ppt');
+  }
+
+  openViewerModal(post: Post): void {
+    this.viewerPost = post;
+    this.showViewerModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeViewerModal(): void {
+    this.showViewerModal = false;
+    this.viewerPost = null;
+    document.body.style.overflow = '';
+  }
+
   getSafeUrl(fileUrl: string): string {
     if (!fileUrl) return '';
     const preview = this.getPreviewUrl(fileUrl);
@@ -408,6 +461,24 @@ export class HomeSectionComponent implements OnInit {
     }
   }
 
+  isCardExpanded(postId: string): boolean {
+    return this.expandedCards.has(postId);
+  }
+
+  toggleCardExpansion(postId: string): void {
+    if (this.expandedCards.has(postId)) {
+      this.expandedCards.delete(postId);
+    } else {
+      this.expandedCards.add(postId);
+    }
+  }
+
+  shouldShowExpandButton(post: Post): boolean {
+    if (!post.content) return false;
+    // Проверяем, что текст достаточно длинный для обрезки (примерно 150+ символов)
+    return post.content.length > 150;
+  }
+
   getTruncatedContent(content: string | undefined): string {
     if (!content) return '';
     const maxLength = 200;
@@ -416,10 +487,11 @@ export class HomeSectionComponent implements OnInit {
   }
 
   shouldShowFullButton(post: Post): boolean {
-    // Показываем кнопку, если контент длинный или много изображений
-    const hasLongContent = !!(post.content && post.content.length > 200);
+    // Показываем кнопку "Показать все" только если много изображений или есть другие причины открыть модальное окно
+    // Но не показываем, если уже есть кнопка развернуть/свернуть
+    if (this.shouldShowExpandButton(post)) return false;
     const hasManyImages = !!(post.images && post.images.length > 3);
-    return hasLongContent || hasManyImages;
+    return hasManyImages;
   }
 
   openPostModal(post: Post): void {
