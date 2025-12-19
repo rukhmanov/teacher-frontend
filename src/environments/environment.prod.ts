@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://rukhmanov-teacher-backend-c2c0.twc1.net',
+  apiUrl: 'https://rukhmanov-teacher-backend-82df.twc1.net',
   yandexMapsApiKey: '',
   dadataApiKey: '',
 };
