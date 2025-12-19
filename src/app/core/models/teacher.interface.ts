@@ -32,6 +32,8 @@ export interface Post {
   content: string;
   images?: string[];
   videos?: string[];
+  files?: string[];
+  fileUrl?: string;
   cardColor?: string;
   coverImage?: string;
   createdAt: Date;
@@ -46,6 +48,8 @@ export interface MasterClass {
   content?: string;
   images?: string[];
   videos?: string[];
+  files?: string[];
+  fileUrl?: string;
   cardColor?: string;
   coverImage?: string;
   createdAt: Date;

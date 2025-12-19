@@ -34,13 +34,13 @@
     </div>
     <div class="form-group" *ngIf="useFileUpload">
       <label class="form-label">Файл</label>
-      <input type="file" class="form-control" (change)="onFileSelect($event)" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        #fileInput />
+      <input type="file" class="form-control" (change)="onFileSelect($event)"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput />
       <small class="form-hint" *ngIf="selectedFile">
         Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
       </small>
       <small class="form-hint" *ngIf="!selectedFile">
-        Поддерживаемые форматы: PDF, DOC, DOCX, изображения (макс. 50 MB)
+        Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, изображения, видео (макс. 50 MB)
       </small>
     </div>
     <div class="form-group">
@@ -67,13 +67,18 @@
   <div class="publications-list">
     <div *ngFor="let publication of publications" class="publication-card card"
       [style.background-color]="publication.cardColor || null">
-      <!-- Превью -->
+      <!-- Превью только для изображений и видео -->
       <div *ngIf="getPreviewUrl(publication.fileUrl) || publication.previewImage || publication.coverImage"
         class="publication-preview">
+        <!-- Приоритет: previewImage/coverImage > изображение/видео из fileUrl -->
         <img *ngIf="publication.previewImage || publication.coverImage"
           [src]="publication.previewImage || publication.coverImage" [alt]="publication.title" class="preview-image" />
-        <iframe *ngIf="getPreviewUrl(publication.fileUrl) && !publication.previewImage && !publication.coverImage"
-          [src]="getPreviewUrl(publication.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
+        <img
+          *ngIf="!publication.previewImage && !publication.coverImage && getPreviewUrl(publication.fileUrl) && isImageFile(publication.fileUrl)"
+          [src]="publication.fileUrl" [alt]="publication.title" class="preview-image" />
+        <video
+          *ngIf="!publication.previewImage && !publication.coverImage && getPreviewUrl(publication.fileUrl) && isVideoFile(publication.fileUrl)"
+          [src]="publication.fileUrl" class="preview-video" controls></video>
       </div>
       <h3>{{ publication.title }}</h3>
       <p *ngIf="publication.description" [class.expanded]="isCardExpanded(publication.id!)" class="description-text">
@@ -104,7 +109,18 @@
       </div>
     </div>
 
-    <div *ngIf="publications.length === 0" class="no-items">
+    <!-- Индикатор загрузки при подгрузке -->
+    <div *ngIf="isLoading && publications.length > 0" class="loading-indicator">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Загрузка публикаций...</span>
+    </div>
+
+    <!-- Сообщение, если больше нет публикаций -->
+    <div *ngIf="!hasMore && publications.length > 0 && !isLoading" class="no-more-items">
+      <p>Все публикации загружены</p>
+    </div>
+
+    <div *ngIf="publications.length === 0 && !isLoading" class="no-items">
       <div class="empty-state">
         <i class="fas fa-file-alt"></i>
         <h3>Публикации отсутствуют</h3>
@@ -127,17 +143,20 @@
         <h2>{{ selectedPublication.title }}</h2>
       </div>
       <div class="modal-body">
-        <!-- Превью в модальном окне -->
+        <!-- Превью в модальном окне (только для изображений и видео) -->
         <div
           *ngIf="getPreviewUrl(selectedPublication.fileUrl) || selectedPublication.previewImage || selectedPublication.coverImage"
           class="modal-preview">
+          <!-- Приоритет: previewImage/coverImage > изображение/видео из fileUrl -->
           <img *ngIf="selectedPublication.previewImage || selectedPublication.coverImage"
             [src]="selectedPublication.previewImage || selectedPublication.coverImage" [alt]="selectedPublication.title"
             class="modal-preview-image" />
-          <iframe
-            *ngIf="getPreviewUrl(selectedPublication.fileUrl) && !selectedPublication.previewImage && !selectedPublication.coverImage"
-            [src]="getPreviewUrl(selectedPublication.fileUrl)!" class="modal-preview-iframe" frameborder="0"
-            allowfullscreen></iframe>
+          <img
+            *ngIf="!selectedPublication.previewImage && !selectedPublication.coverImage && getPreviewUrl(selectedPublication.fileUrl) && isImageFile(selectedPublication.fileUrl)"
+            [src]="selectedPublication.fileUrl" [alt]="selectedPublication.title" class="modal-preview-image" />
+          <video
+            *ngIf="!selectedPublication.previewImage && !selectedPublication.coverImage && getPreviewUrl(selectedPublication.fileUrl) && isVideoFile(selectedPublication.fileUrl)"
+            [src]="selectedPublication.fileUrl" class="modal-preview-video" controls></video>
         </div>
         <p *ngIf="selectedPublication.description" class="modal-text">
           {{ selectedPublication.description }}
@@ -173,8 +192,12 @@
         <!-- Для изображений используем img -->
         <img *ngIf="getViewerUrl(viewerPublication.fileUrl) && isImageFile(viewerPublication.fileUrl)"
           [src]="viewerPublication.fileUrl" [alt]="viewerPublication.title" class="viewer-image" />
+        <!-- Для видео используем video -->
+        <video *ngIf="getViewerUrl(viewerPublication.fileUrl) && isVideoFile(viewerPublication.fileUrl)"
+          [src]="viewerPublication.fileUrl" class="viewer-video" controls></video>
         <!-- Для других файлов используем iframe -->
-        <iframe *ngIf="getViewerUrl(viewerPublication.fileUrl) && !isImageFile(viewerPublication.fileUrl)"
+        <iframe
+          *ngIf="getViewerUrl(viewerPublication.fileUrl) && !isImageFile(viewerPublication.fileUrl) && !isVideoFile(viewerPublication.fileUrl)"
           [src]="getViewerUrl(viewerPublication.fileUrl)!" class="viewer-iframe" frameborder="0"
           allowfullscreen></iframe>
         <div *ngIf="!getViewerUrl(viewerPublication.fileUrl)" class="viewer-error">

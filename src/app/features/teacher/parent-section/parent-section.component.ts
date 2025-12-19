@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -38,6 +38,12 @@ export class ParentSectionComponent implements OnInit {
   // Состояние развернутости карточек
   expandedCards: Set<string> = new Set();
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -49,31 +55,91 @@ export class ParentSectionComponent implements OnInit {
     // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
+      this.resetPagination();
       if (this.username) {
         this.loadPublicSections();
       } else {
         this.isEditMode = true;
-        this.loadOwnSections();
+        this.loadOwnSections(true);
       }
     });
   }
 
-  loadPublicSections() {
-    if (this.username) {
-      this.teachersService.getParentSections(this.username).subscribe({
-        next: (sections) => {
-          this.sections = sections;
-        },
-      });
-    }
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.sections = [];
   }
 
-  loadOwnSections() {
-    this.teachersService.getOwnParentSections().subscribe({
+  loadPublicSections(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getParentSections(this.username, this.skip, this.take).subscribe({
       next: (sections) => {
-        this.sections = sections;
+        if (reset) {
+          this.sections = sections;
+        } else {
+          this.sections = [...this.sections, ...sections];
+        }
+
+        this.hasMore = sections.length === this.take;
+        this.skip += sections.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
+  }
+
+  loadOwnSections(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getOwnParentSections(this.skip, this.take).subscribe({
+      next: (sections) => {
+        if (reset) {
+          this.sections = sections;
+        } else {
+          this.sections = [...this.sections, ...sections];
+        }
+
+        this.hasMore = sections.length === this.take;
+        this.skip += sections.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollPercent = (scrollTop + windowHeight) / documentHeight;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил на 80%
+    if (scrollPercent > 0.8) {
+      if (this.username) {
+        this.loadPublicSections();
+      } else {
+        this.loadOwnSections(true);
+      }
+    }
   }
 
   createSection() {
@@ -135,7 +201,7 @@ export class ParentSectionComponent implements OnInit {
     if (this.editingSectionId) {
       this.teachersService.updateParentSection(this.editingSectionId, this.newSection as any).subscribe({
         next: () => {
-          this.loadOwnSections();
+          this.loadOwnSections(true);
           this.cancelEdit();
         },
         error: () => {
@@ -148,7 +214,7 @@ export class ParentSectionComponent implements OnInit {
     } else {
       this.teachersService.createParentSection(this.newSection as any).subscribe({
         next: () => {
-          this.loadOwnSections();
+          this.loadOwnSections(true);
           this.cancelEdit();
         },
         error: () => {
@@ -190,7 +256,7 @@ export class ParentSectionComponent implements OnInit {
     if (confirm('Удалить этот раздел?')) {
       this.teachersService.deleteParentSection(id).subscribe({
         next: () => {
-          this.loadOwnSections();
+          this.loadOwnSections(true);
         },
       });
     }

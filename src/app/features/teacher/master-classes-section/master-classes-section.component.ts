@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -28,12 +29,16 @@ export class MasterClassesSectionComponent implements OnInit {
     description: '',
     content: '',
     images: [],
+    fileUrl: '',
     cardColor: '',
   };
   placeholder = PlaceholderUtil;
   
   selectedImages: File[] = [];
   imagePreviews: string[] = [];
+  selectedFile: File | null = null;
+  useFileUpload = false;
+  isUploading = false;
   
   // Карусель изображений
   showCarousel: boolean = false;
@@ -44,11 +49,18 @@ export class MasterClassesSectionComponent implements OnInit {
   showModal: boolean = false;
   selectedMasterClass: MasterClass | null = null;
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
     private authService: AuthService,
     private uploadService: UploadService,
+    private sanitizer: DomSanitizer,
   ) {}
   
   onImageSelect(event: Event) {
@@ -71,6 +83,47 @@ export class MasterClassesSectionComponent implements OnInit {
   removeImage(index: number) {
     this.selectedImages.splice(index, 1);
     this.imagePreviews.splice(index, 1);
+  }
+
+  onFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+    }
+  }
+
+  switchToUrl() {
+    this.useFileUpload = false;
+    this.selectedFile = null;
+  }
+
+  switchToFileUpload() {
+    this.useFileUpload = true;
+    this.newMasterClass.fileUrl = '';
+  }
+
+  isImageFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || 
+           url.endsWith('.gif') || url.endsWith('.webp') || url.endsWith('.bmp') || 
+           url.endsWith('.svg');
+  }
+
+  isVideoFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || 
+           url.endsWith('.mov') || url.endsWith('.avi') || url.endsWith('.mkv');
+  }
+
+  getPreviewUrl(fileUrl: string): SafeResourceUrl | null {
+    if (!fileUrl) return null;
+    // Показываем превью только для изображений и видео
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+    }
+    return null;
   }
 
   onImageError(event: Event, type: 'avatar' | 'post' | 'gallery' = 'post') {
@@ -109,6 +162,7 @@ export class MasterClassesSectionComponent implements OnInit {
     // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
+      this.resetPagination();
       if (this.username) {
         this.loadPublicMasterClasses();
       } else {
@@ -118,45 +172,109 @@ export class MasterClassesSectionComponent implements OnInit {
     });
   }
 
-  loadPublicMasterClasses() {
-    if (this.username) {
-      this.teachersService.getMasterClasses(this.username).subscribe({
-        next: (classes) => {
-          this.masterClasses = classes;
-        },
-      });
-    }
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.masterClasses = [];
   }
 
-  loadOwnMasterClasses() {
-    this.teachersService.getOwnMasterClasses().subscribe({
-      next: (classes) => {
-        this.masterClasses = classes;
+  loadPublicMasterClasses(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getMasterClasses(this.username, this.skip, this.take).subscribe({
+      next: (masterClasses) => {
+        if (reset) {
+          this.masterClasses = masterClasses;
+        } else {
+          this.masterClasses = [...this.masterClasses, ...masterClasses];
+        }
+
+        this.hasMore = masterClasses.length === this.take;
+        this.skip += masterClasses.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
   }
 
+  loadOwnMasterClasses(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getOwnMasterClasses(this.skip, this.take).subscribe({
+      next: (masterClasses) => {
+        if (reset) {
+          this.masterClasses = masterClasses;
+        } else {
+          this.masterClasses = [...this.masterClasses, ...masterClasses];
+        }
+
+        this.hasMore = masterClasses.length === this.take;
+        this.skip += masterClasses.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollPercent = (scrollTop + windowHeight) / documentHeight;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил на 80%
+    if (scrollPercent > 0.8) {
+      if (this.username) {
+        this.loadPublicMasterClasses();
+      } else {
+        this.loadOwnMasterClasses();
+      }
+    }
+  }
+
   createMasterClass() {
+    if (!this.newMasterClass.title) {
+      alert('Пожалуйста, введите заголовок');
+      return;
+    }
+
+    this.isUploading = true;
     this.continueMasterClassCreation();
   }
 
   private continueMasterClassCreation() {
-    if (this.selectedImages.length > 0) {
-      // Загружаем изображения
-      const uploadObservables = this.selectedImages.map(file => 
-        this.uploadService.uploadImage(file)
-      );
-      
-      // Используем forkJoin для параллельной загрузки
-      forkJoin(uploadObservables).subscribe({
-        next: (results) => {
-          // Добавляем новые изображения к существующим (если редактируем)
-          const newImageUrls = results.map(r => r.url);
-          this.newMasterClass.images = [...(this.newMasterClass.images || []), ...newImageUrls];
+    if (this.useFileUpload) {
+      if (!this.selectedFile) {
+        alert('Пожалуйста, выберите файл для загрузки');
+        this.isUploading = false;
+        return;
+      }
+      this.isUploading = true;
+      this.uploadService.uploadFile(this.selectedFile).subscribe({
+        next: (response) => {
+          this.newMasterClass.fileUrl = response.url;
           this.submitMasterClass();
         },
         error: (err) => {
-          console.error('Error uploading images:', err);
+          console.error('Error uploading file:', err);
+          this.isUploading = false;
           this.submitMasterClass();
         },
       });
@@ -169,15 +287,23 @@ export class MasterClassesSectionComponent implements OnInit {
     if (this.editingMasterClassId) {
       this.teachersService.updateMasterClass(this.editingMasterClassId, this.newMasterClass as any).subscribe({
         next: () => {
-          this.loadOwnMasterClasses();
+          this.isUploading = false;
+          this.loadOwnMasterClasses(true);
           this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
         },
       });
     } else {
       this.teachersService.createMasterClass(this.newMasterClass as any).subscribe({
         next: () => {
-          this.loadOwnMasterClasses();
+          this.isUploading = false;
+          this.loadOwnMasterClasses(true);
           this.cancelEdit();
+        },
+        error: () => {
+          this.isUploading = false;
         },
       });
     }
@@ -190,19 +316,33 @@ export class MasterClassesSectionComponent implements OnInit {
       description: masterClass.description,
       content: masterClass.content,
       images: [...(masterClass.images || [])],
+      fileUrl: masterClass.fileUrl || '',
       cardColor: masterClass.cardColor || '',
     } as Partial<MasterClass> & { images: string[] };
     this.selectedImages = [];
     this.imagePreviews = [];
+    this.selectedFile = null;
+    this.useFileUpload = !!masterClass.fileUrl;
     this.showForm = true;
   }
 
   cancelEdit() {
     this.showForm = false;
     this.editingMasterClassId = null;
-    this.newMasterClass = { title: '', description: '', content: '', images: [], cardColor: '' } as Partial<MasterClass> & { images: string[] };
+    this.newMasterClass = { title: '', description: '', content: '', images: [], fileUrl: '', cardColor: '' } as Partial<MasterClass> & { images: string[] };
     this.selectedImages = [];
     this.imagePreviews = [];
+    this.selectedFile = null;
+    this.useFileUpload = false;
+  }
+
+  getSafeUrl(fileUrl: string): string {
+    if (!fileUrl) return '';
+    const preview = this.getPreviewUrl(fileUrl);
+    if (preview) {
+      return (preview as any).changingThisBreaksApplicationSecurity || fileUrl;
+    }
+    return fileUrl;
   }
 
   removeCardColor() {
@@ -213,7 +353,7 @@ export class MasterClassesSectionComponent implements OnInit {
     if (confirm('Удалить этот мастер-класс?')) {
       this.teachersService.deleteMasterClass(id).subscribe({
         next: () => {
-          this.loadOwnMasterClasses();
+          this.loadOwnMasterClasses(true);
         },
       });
     }

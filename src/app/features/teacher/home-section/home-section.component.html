@@ -25,32 +25,36 @@
           </div>
           <div class="form-group">
             <label class="form-label">
-              <i class="fas fa-images"></i> Изображения
+              <i class="fas fa-file"></i> Файл
             </label>
-            <div class="image-upload-area">
-              <input type="file" #imageInput class="file-input" accept="image/*" multiple
-                (change)="onImageSelect($event)" />
-              <button type="button" class="btn-upload" (click)="imageInput.click()">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <span>Выбрать изображения</span>
+            <div class="file-input-toggle">
+              <button type="button" class="toggle-btn" [class.active]="!useFileUpload" (click)="switchToUrl()">
+                <i class="fas fa-link"></i> По ссылке
               </button>
-              <div *ngIf="imagePreviews.length > 0 || newPost.images.length > 0" class="image-previews">
-                <!-- Существующие изображения -->
-                <div *ngFor="let imageUrl of newPost.images; let i = index" class="image-preview">
-                  <img [src]="placeholder.getImageUrl(imageUrl, 'post')" alt="Post image"
-                    (error)="onImageError($event, 'post')" />
-                  <button type="button" class="btn-remove-image" (click)="newPost.images.splice(i, 1)">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-                <!-- Новые превью изображений -->
-                <div *ngFor="let preview of imagePreviews; let i = index" class="image-preview">
-                  <img [src]="preview" alt="Preview" />
-                  <button type="button" class="btn-remove-image" (click)="removeImage(i)">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
+              <button type="button" class="toggle-btn" [class.active]="useFileUpload" (click)="switchToFileUpload()">
+                <i class="fas fa-upload"></i> Загрузить файл
+              </button>
+            </div>
+            <div *ngIf="!useFileUpload" class="url-input-group">
+              <input type="text" class="form-control" [(ngModel)]="newPost.fileUrl" name="fileUrl"
+                placeholder="Вставьте ссылку на файл" />
+            </div>
+            <div *ngIf="useFileUpload" class="file-upload-group">
+              <input type="file" class="form-control" (change)="onFileSelect($event)"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput />
+              <small class="form-hint" *ngIf="selectedFile">
+                Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+              </small>
+              <small class="form-hint" *ngIf="!selectedFile">
+                Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, изображения, видео (макс. 50 MB)
+              </small>
+            </div>
+            <!-- Превью файла (только для изображений и видео) -->
+            <div *ngIf="newPost.fileUrl && getPreviewUrl(newPost.fileUrl)" class="file-preview">
+              <img *ngIf="isImageFile(newPost.fileUrl)" [src]="getSafeUrl(newPost.fileUrl)" alt="Preview"
+                class="preview-image" />
+              <video *ngIf="isVideoFile(newPost.fileUrl)" [src]="getSafeUrl(newPost.fileUrl)" controls
+                class="preview-video"></video>
             </div>
           </div>
           <div class="form-group">
@@ -95,6 +99,13 @@
             <div *ngIf="post.images && post.images.length > 3" class="images-more">
               <p>+{{ post.images.length - 3 }} изображений</p>
             </div>
+            <!-- Превью файла (только для изображений и видео) -->
+            <div *ngIf="post.fileUrl && getPreviewUrl(post.fileUrl)" class="post-file-preview">
+              <img *ngIf="isImageFile(post.fileUrl)" [src]="getSafeUrl(post.fileUrl)" alt="File preview"
+                class="preview-image clickable-image" (click)="openImageCarousel([post.fileUrl], 0)" />
+              <video *ngIf="isVideoFile(post.fileUrl)" [src]="getSafeUrl(post.fileUrl)" controls
+                class="preview-video"></video>
+            </div>
           </div>
           <div class="post-footer">
             <button *ngIf="shouldShowFullButton(post)" class="btn-expand" (click)="openPostModal(post)">
@@ -112,7 +123,18 @@
           </div>
         </div>
 
-        <div *ngIf="posts.length === 0" class="no-posts">
+        <!-- Индикатор загрузки при подгрузке -->
+        <div *ngIf="isLoading && posts.length > 0" class="loading-indicator">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Загрузка постов...</span>
+        </div>
+
+        <!-- Сообщение, если больше нет постов -->
+        <div *ngIf="!hasMore && posts.length > 0 && !isLoading" class="no-more-items">
+          <p>Все посты загружены</p>
+        </div>
+
+        <div *ngIf="posts.length === 0 && !isLoading" class="no-posts">
           <div class="empty-state">
             <i class="fas fa-newspaper"></i>
             <h3>Пока нет постов</h3>
@@ -147,6 +169,11 @@
           <img *ngFor="let image of selectedPost.images; let i = index" [src]="getImageUrl(image, 'post')"
             alt="Post image" (error)="onImageError($event, 'post')"
             (click)="openImageCarousel(selectedPost.images || [], i)" class="clickable-image" />
+        </div>
+        <div *ngIf="selectedPost.fileUrl && getPreviewUrl(selectedPost.fileUrl) && isImageFile(selectedPost.fileUrl)"
+          class="modal-file-preview">
+          <img [src]="getSafeUrl(selectedPost.fileUrl)" alt="File preview" class="clickable-image"
+            (click)="openImageCarousel([selectedPost.fileUrl], 0)" />
         </div>
         <p class="modal-text">{{ selectedPost.content }}</p>
       </div>

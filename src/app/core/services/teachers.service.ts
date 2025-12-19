@@ -52,19 +52,31 @@ export class TeachersService {
   }
 
   // Posts
-  getPosts(username: string): Observable<Post[]>;
-  getPosts(teacherId?: string): Observable<Post[]>;
-  getPosts(usernameOrTeacherId?: string): Observable<Post[]> {
+  getPosts(
+    usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
+  ): Observable<Post[]> {
+    let url = '';
     if (usernameOrTeacherId) {
-      return this.http.get<Post[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/posts`,
-      );
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/posts`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/posts`;
     }
-    return this.http.get<Post[]>(`${this.apiUrl}/teachers/me/posts`);
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Post[]>(url, { params });
   }
 
-  getOwnPosts(): Observable<Post[]> {
-    return this.http.get<Post[]>(`${this.apiUrl}/teachers/me/posts`);
+  getOwnPosts(skip?: number, take?: number): Observable<Post[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Post[]>(`${this.apiUrl}/teachers/me/posts`, { params });
   }
 
   createPost(data: Partial<Post>): Observable<Post> {
@@ -83,22 +95,33 @@ export class TeachersService {
   }
 
   // Master Classes
-  getMasterClasses(username: string): Observable<MasterClass[]>;
-  getMasterClasses(teacherId?: string): Observable<MasterClass[]>;
-  getMasterClasses(usernameOrTeacherId?: string): Observable<MasterClass[]> {
+  getMasterClasses(
+    usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
+  ): Observable<MasterClass[]> {
+    let url = '';
     if (usernameOrTeacherId) {
-      return this.http.get<MasterClass[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/master-classes`,
-      );
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/master-classes`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/master-classes`;
     }
-    return this.http.get<MasterClass[]>(
-      `${this.apiUrl}/teachers/me/master-classes`,
-    );
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<MasterClass[]>(url, { params });
   }
 
-  getOwnMasterClasses(): Observable<MasterClass[]> {
+  getOwnMasterClasses(skip?: number, take?: number): Observable<MasterClass[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
     return this.http.get<MasterClass[]>(
       `${this.apiUrl}/teachers/me/master-classes`,
+      { params },
     );
   }
 
@@ -126,24 +149,33 @@ export class TeachersService {
   }
 
   // Presentations
-  getPresentations(username: string): Observable<Presentation[]>;
-  getPresentations(teacherId?: string): Observable<Presentation[]>;
   getPresentations(
     usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
   ): Observable<Presentation[]> {
+    let url = '';
     if (usernameOrTeacherId) {
-      return this.http.get<Presentation[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/presentations`,
-      );
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/presentations`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/presentations`;
     }
-    return this.http.get<Presentation[]>(
-      `${this.apiUrl}/teachers/me/presentations`,
-    );
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Presentation[]>(url, { params });
   }
 
-  getOwnPresentations(): Observable<Presentation[]> {
+  getOwnPresentations(skip?: number, take?: number): Observable<Presentation[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
     return this.http.get<Presentation[]>(
       `${this.apiUrl}/teachers/me/presentations`,
+      { params },
     );
   }
 
@@ -171,24 +203,36 @@ export class TeachersService {
   }
 
   // Publications
-  getPublications(username: string): Observable<Publication[]>;
-  getPublications(teacherId?: string): Observable<Publication[]>;
   getPublications(
     usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
+    type?: string,
   ): Observable<Publication[]> {
+    let url = '';
     if (usernameOrTeacherId) {
-      return this.http.get<Publication[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/publications`,
-      );
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/publications`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/publications`;
     }
-    return this.http.get<Publication[]>(
-      `${this.apiUrl}/teachers/me/publications`,
-    );
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+    if (type !== undefined) params.type = type;
+
+    return this.http.get<Publication[]>(url, { params });
   }
 
-  getOwnPublications(): Observable<Publication[]> {
+  getOwnPublications(skip?: number, take?: number, type?: string): Observable<Publication[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+    if (type !== undefined) params.type = type;
+
     return this.http.get<Publication[]>(
       `${this.apiUrl}/teachers/me/publications`,
+      { params },
     );
   }
 
@@ -216,24 +260,33 @@ export class TeachersService {
   }
 
   // Parent Sections
-  getParentSections(username: string): Observable<ParentSection[]>;
-  getParentSections(teacherId?: string): Observable<ParentSection[]>;
   getParentSections(
     usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
   ): Observable<ParentSection[]> {
+    let url = '';
     if (usernameOrTeacherId) {
-      return this.http.get<ParentSection[]>(
-        `${this.apiUrl}/teachers/${usernameOrTeacherId}/parents`,
-      );
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/parents`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/parents`;
     }
-    return this.http.get<ParentSection[]>(
-      `${this.apiUrl}/teachers/me/parents`,
-    );
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<ParentSection[]>(url, { params });
   }
 
-  getOwnParentSections(): Observable<ParentSection[]> {
+  getOwnParentSections(skip?: number, take?: number): Observable<ParentSection[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
     return this.http.get<ParentSection[]>(
       `${this.apiUrl}/teachers/me/parents`,
+      { params },
     );
   }
 

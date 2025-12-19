@@ -22,31 +22,36 @@
     </div>
     <div class="form-group">
       <label class="form-label">
-        <i class="fas fa-images"></i> Изображения
+        <i class="fas fa-file"></i> Файл
       </label>
-      <div class="image-upload-area">
-        <input type="file" #imageInput class="file-input" accept="image/*" multiple (change)="onImageSelect($event)" />
-        <button type="button" class="btn-upload" (click)="imageInput.click()">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <span>Выбрать изображения</span>
+      <div class="file-input-toggle">
+        <button type="button" class="toggle-btn" [class.active]="!useFileUpload" (click)="switchToUrl()">
+          <i class="fas fa-link"></i> По ссылке
         </button>
-        <div *ngIf="imagePreviews.length > 0 || newMasterClass.images.length > 0" class="image-previews">
-          <!-- Существующие изображения -->
-          <div *ngFor="let imageUrl of newMasterClass.images; let i = index" class="image-preview">
-            <img [src]="placeholder.getImageUrl(imageUrl, 'post')" alt="Master class image"
-              (error)="onImageError($event, 'post')" />
-            <button type="button" class="btn-remove-image" (click)="newMasterClass.images.splice(i, 1)">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <!-- Новые превью изображений -->
-          <div *ngFor="let preview of imagePreviews; let i = index" class="image-preview">
-            <img [src]="preview" alt="Preview" />
-            <button type="button" class="btn-remove-image" (click)="removeImage(i)">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
+        <button type="button" class="toggle-btn" [class.active]="useFileUpload" (click)="switchToFileUpload()">
+          <i class="fas fa-upload"></i> Загрузить файл
+        </button>
+      </div>
+      <div *ngIf="!useFileUpload" class="url-input-group">
+        <input type="text" class="form-control" [(ngModel)]="newMasterClass.fileUrl" name="fileUrl"
+          placeholder="Вставьте ссылку на файл" />
+      </div>
+      <div *ngIf="useFileUpload" class="file-upload-group">
+        <input type="file" class="form-control" (change)="onFileSelect($event)"
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput />
+        <small class="form-hint" *ngIf="selectedFile">
+          Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+        </small>
+        <small class="form-hint" *ngIf="!selectedFile">
+          Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, изображения, видео (макс. 50 MB)
+        </small>
+      </div>
+      <!-- Превью файла (только для изображений и видео) -->
+      <div *ngIf="newMasterClass.fileUrl && getPreviewUrl(newMasterClass.fileUrl)" class="file-preview">
+        <img *ngIf="isImageFile(newMasterClass.fileUrl)" [src]="getSafeUrl(newMasterClass.fileUrl)" alt="Preview"
+          class="preview-image" />
+        <video *ngIf="isVideoFile(newMasterClass.fileUrl)" [src]="getSafeUrl(newMasterClass.fileUrl)" controls
+          class="preview-video"></video>
       </div>
     </div>
     <div class="form-group">
@@ -83,6 +88,13 @@
       <div *ngIf="masterClass.content" class="content">
         <div class="content-text" [innerHTML]="getTruncatedContent(masterClass.content)"></div>
       </div>
+      <!-- Превью файла (только для изображений и видео) -->
+      <div *ngIf="masterClass.fileUrl && getPreviewUrl(masterClass.fileUrl)" class="master-class-file-preview">
+        <img *ngIf="isImageFile(masterClass.fileUrl)" [src]="getSafeUrl(masterClass.fileUrl)" alt="File preview"
+          class="preview-image clickable-image" (click)="openImageCarousel([masterClass.fileUrl], 0)" />
+        <video *ngIf="isVideoFile(masterClass.fileUrl)" [src]="getSafeUrl(masterClass.fileUrl)" controls
+          class="preview-video"></video>
+      </div>
       <div class="card-footer">
         <button *ngIf="shouldShowFullButton(masterClass)" class="btn-expand" (click)="openModal(masterClass)">
           <i class="fas fa-expand"></i> Показать все
@@ -98,7 +110,18 @@
       </div>
     </div>
 
-    <div *ngIf="masterClasses.length === 0" class="no-items">
+    <!-- Индикатор загрузки при подгрузке -->
+    <div *ngIf="isLoading && masterClasses.length > 0" class="loading-indicator">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Загрузка мастер-классов...</span>
+    </div>
+
+    <!-- Сообщение, если больше нет мастер-классов -->
+    <div *ngIf="!hasMore && masterClasses.length > 0 && !isLoading" class="no-more-items">
+      <p>Все мастер-классы загружены</p>
+    </div>
+
+    <div *ngIf="masterClasses.length === 0 && !isLoading" class="no-items">
       <div class="empty-state">
         <i class="fas fa-graduation-cap"></i>
         <h3>Копилка мастер-классов пуста</h3>
@@ -128,6 +151,12 @@
           <img *ngFor="let image of selectedMasterClass.images; let i = index" [src]="getImageUrl(image, 'post')"
             alt="Master class image" (error)="onImageError($event, 'post')"
             (click)="openImageCarousel(selectedMasterClass!.images || [], i)" class="clickable-image" />
+        </div>
+        <div
+          *ngIf="selectedMasterClass.fileUrl && getPreviewUrl(selectedMasterClass.fileUrl) && isImageFile(selectedMasterClass.fileUrl)"
+          class="modal-file-preview">
+          <img [src]="getSafeUrl(selectedMasterClass.fileUrl)" alt="File preview" class="clickable-image"
+            (click)="openImageCarousel([selectedMasterClass.fileUrl], 0)" />
         </div>
         <div *ngIf="selectedMasterClass.content" class="modal-text" [innerHTML]="selectedMasterClass.content"></div>
       </div>

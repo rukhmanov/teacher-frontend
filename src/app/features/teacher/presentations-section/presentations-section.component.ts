@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -33,6 +33,12 @@ export class PresentationsSectionComponent implements OnInit {
   showViewerModal: boolean = false;
   viewerPresentation: Presentation | null = null;
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -44,31 +50,91 @@ export class PresentationsSectionComponent implements OnInit {
     // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
+      this.resetPagination();
       if (this.username) {
-        this.loadPublicPresentations();
+        this.loadPublicPresentations(true);
       } else {
         this.isEditMode = true;
-        this.loadOwnPresentations();
+        this.loadOwnPresentations(true);
       }
     });
   }
 
-  loadPublicPresentations() {
-    if (this.username) {
-      this.teachersService.getPresentations(this.username).subscribe({
-        next: (presentations) => {
-          this.presentations = presentations;
-        },
-      });
-    }
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.presentations = [];
   }
 
-  loadOwnPresentations() {
-    this.teachersService.getOwnPresentations().subscribe({
+  loadPublicPresentations(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getPresentations(this.username, this.skip, this.take).subscribe({
       next: (presentations) => {
-        this.presentations = presentations;
+        if (reset) {
+          this.presentations = presentations;
+        } else {
+          this.presentations = [...this.presentations, ...presentations];
+        }
+
+        this.hasMore = presentations.length === this.take;
+        this.skip += presentations.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
+  }
+
+  loadOwnPresentations(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getOwnPresentations(this.skip, this.take).subscribe({
+      next: (presentations) => {
+        if (reset) {
+          this.presentations = presentations;
+        } else {
+          this.presentations = [...this.presentations, ...presentations];
+        }
+
+        this.hasMore = presentations.length === this.take;
+        this.skip += presentations.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollPercent = (scrollTop + windowHeight) / documentHeight;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил на 80%
+    if (scrollPercent > 0.8) {
+      if (this.username) {
+        this.loadPublicPresentations();
+      } else {
+        this.loadOwnPresentations();
+      }
+    }
   }
 
   onFileSelect(event: Event) {
@@ -131,7 +197,7 @@ export class PresentationsSectionComponent implements OnInit {
     if (this.editingPresentationId) {
       this.teachersService.updatePresentation(this.editingPresentationId, this.newPresentation as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPresentations(true);
           this.cancelEdit();
         },
         error: () => {
@@ -144,7 +210,7 @@ export class PresentationsSectionComponent implements OnInit {
     } else {
       this.teachersService.createPresentation(this.newPresentation as any).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPresentations(true);
           this.cancelEdit();
         },
         error: () => {
@@ -190,7 +256,7 @@ export class PresentationsSectionComponent implements OnInit {
     if (confirm('Удалить эту презентацию?')) {
       this.teachersService.deletePresentation(id).subscribe({
         next: () => {
-          this.loadOwnPresentations();
+          this.loadOwnPresentations(true);
         },
       });
     }

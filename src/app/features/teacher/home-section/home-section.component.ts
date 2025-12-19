@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -28,7 +29,7 @@ export class HomeSectionComponent implements OnInit {
     title: '',
     content: '',
     images: [] as string[],
-    videos: [] as string[],
+    fileUrl: '',
     cardColor: '',
   };
   
@@ -37,6 +38,9 @@ export class HomeSectionComponent implements OnInit {
 
   selectedImages: File[] = [];
   imagePreviews: string[] = [];
+  selectedFile: File | null = null;
+  useFileUpload = false;
+  isUploading = false;
   
   // Карусель изображений
   showCarousel: boolean = false;
@@ -47,12 +51,19 @@ export class HomeSectionComponent implements OnInit {
   showPostModal: boolean = false;
   selectedPost: Post | null = null;
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private teachersService: TeachersService,
     private authService: AuthService,
     private uploadService: UploadService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit() {
@@ -74,7 +85,7 @@ export class HomeSectionComponent implements OnInit {
       // Страница редактирования - проверяем авторизацию
       if (this.authService.isAuthenticated()) {
         this.isEditMode = true;
-        this.loadOwnPosts();
+        this.loadOwnPosts(true);
         this.loadOwnProfile();
       }
       // Если не авторизован, просто не загружаем данные (guard должен был перенаправить)
@@ -93,6 +104,12 @@ export class HomeSectionComponent implements OnInit {
     });
   }
 
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.posts = [];
+  }
+
   loadPublicData() {
     if (this.username) {
       // Загружаем профиль учителя для отображения информации
@@ -105,33 +122,80 @@ export class HomeSectionComponent implements OnInit {
         },
       });
       // Загружаем публичные посты
-      this.teachersService.getPosts(this.username).subscribe({
-        next: (posts) => {
-          this.posts = posts;
-        },
-        error: (err) => {
-          console.error('Error loading posts:', err);
-        },
-      });
+      this.resetPagination();
+      this.loadPublicPosts(true);
     }
   }
 
-  loadPublicPosts() {
-    if (this.username) {
-      this.teachersService.getPosts(this.username).subscribe({
-        next: (posts) => {
-          this.posts = posts;
-        },
-      });
-    }
-  }
+  loadPublicPosts(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
 
-  loadOwnPosts() {
-    this.teachersService.getOwnPosts().subscribe({
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getPosts(this.username, this.skip, this.take).subscribe({
       next: (posts) => {
-        this.posts = posts;
+        if (reset) {
+          this.posts = posts;
+        } else {
+          this.posts = [...this.posts, ...posts];
+        }
+
+        this.hasMore = posts.length === this.take;
+        this.skip += posts.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
+  }
+
+  loadOwnPosts(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getOwnPosts(this.skip, this.take).subscribe({
+      next: (posts) => {
+        if (reset) {
+          this.posts = posts;
+        } else {
+          this.posts = [...this.posts, ...posts];
+        }
+
+        this.hasMore = posts.length === this.take;
+        this.skip += posts.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollPercent = (scrollTop + windowHeight) / documentHeight;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил на 80%
+    if (scrollPercent > 0.8) {
+      if (this.username) {
+        this.loadPublicPosts(true);
+      } else {
+        this.loadOwnPosts(true);
+      }
+    }
   }
 
   loadOwnProfile() {
@@ -170,34 +234,89 @@ export class HomeSectionComponent implements OnInit {
     this.imagePreviews.splice(index, 1);
   }
 
+  onFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+    }
+  }
+
+  switchToUrl() {
+    this.useFileUpload = false;
+    this.selectedFile = null;
+  }
+
+  switchToFileUpload() {
+    this.useFileUpload = true;
+    this.newPost.fileUrl = '';
+  }
+
+  isImageFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || 
+           url.endsWith('.gif') || url.endsWith('.webp') || url.endsWith('.bmp') || 
+           url.endsWith('.svg');
+  }
+
+  isVideoFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || 
+           url.endsWith('.mov') || url.endsWith('.avi') || url.endsWith('.mkv');
+  }
+
+  getPreviewUrl(fileUrl: string): SafeResourceUrl | null {
+    if (!fileUrl) return null;
+    // Показываем превью только для изображений и видео
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+    }
+    return null;
+  }
+
+  getSafeUrl(fileUrl: string): string {
+    if (!fileUrl) return '';
+    const preview = this.getPreviewUrl(fileUrl);
+    if (preview) {
+      return (preview as any).changingThisBreaksApplicationSecurity || fileUrl;
+    }
+    return fileUrl;
+  }
+
 
   removeCardColor() {
     this.newPost.cardColor = '';
   }
 
   createPost() {
+    if (!this.newPost.title) {
+      alert('Пожалуйста, введите заголовок');
+      return;
+    }
+
+    this.isUploading = true;
     this.continuePostCreation();
   }
 
   private continuePostCreation() {
-    if (this.selectedImages.length > 0) {
-      // Загружаем изображения
-      const uploadObservables = this.selectedImages.map(file => 
-        this.uploadService.uploadImage(file)
-      );
-      
-      // Используем forkJoin для параллельной загрузки
-      forkJoin(uploadObservables).subscribe({
-        next: (results) => {
-          // Добавляем новые изображения к существующим (если редактируем)
-          const newImageUrls = results.map(r => r.url);
-          this.newPost.images = [...(this.newPost.images || []), ...newImageUrls];
+    if (this.useFileUpload) {
+      if (!this.selectedFile) {
+        alert('Пожалуйста, выберите файл для загрузки');
+        this.isUploading = false;
+        return;
+      }
+      this.isUploading = true;
+      this.uploadService.uploadFile(this.selectedFile).subscribe({
+        next: (response) => {
+          this.newPost.fileUrl = response.url;
           this.submitPost();
         },
         error: (err) => {
-          console.error('Error uploading images:', err);
+          console.error('Error uploading file:', err);
+          this.isUploading = false;
           this.submitPost();
-        }
+        },
       });
     } else {
       this.submitPost();
@@ -209,22 +328,26 @@ export class HomeSectionComponent implements OnInit {
       // Обновляем существующий пост
       this.teachersService.updatePost(this.editingPostId, this.newPost).subscribe({
         next: () => {
-          this.loadOwnPosts();
+          this.isUploading = false;
+          this.loadOwnPosts(true);
           this.cancelEdit();
         },
         error: (err) => {
           console.error('Error updating post:', err);
+          this.isUploading = false;
         },
       });
     } else {
       // Создаем новый пост
       this.teachersService.createPost(this.newPost).subscribe({
         next: () => {
-          this.loadOwnPosts();
+          this.isUploading = false;
+          this.loadOwnPosts(true);
           this.cancelEdit();
         },
         error: (err) => {
           console.error('Error creating post:', err);
+          this.isUploading = false;
         },
       });
     }
@@ -236,27 +359,31 @@ export class HomeSectionComponent implements OnInit {
       title: post.title,
       content: post.content,
       images: [...(post.images || [])],
-      videos: [...(post.videos || [])],
+      fileUrl: post.fileUrl || '',
       cardColor: post.cardColor || '',
     };
     this.selectedImages = [];
     this.imagePreviews = [];
+    this.selectedFile = null;
+    this.useFileUpload = !!post.fileUrl;
     this.showPostForm = true;
   }
 
   cancelEdit() {
     this.showPostForm = false;
     this.editingPostId = null;
-    this.newPost = { title: '', content: '', images: [], videos: [], cardColor: '' };
+    this.newPost = { title: '', content: '', images: [], fileUrl: '', cardColor: '' };
     this.selectedImages = [];
     this.imagePreviews = [];
+    this.selectedFile = null;
+    this.useFileUpload = false;
   }
 
   deletePost(id: string) {
     if (confirm('Удалить этот пост?')) {
       this.teachersService.deletePost(id).subscribe({
         next: () => {
-          this.loadOwnPosts();
+          this.loadOwnPosts(true);
         },
       });
     }

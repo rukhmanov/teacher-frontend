@@ -204,9 +204,27 @@ export class LifeInDOUSectionComponent implements OnInit {
   }
 
   getPhotoUrls(): string[] {
-    return this.getMediaItems()
+    const allPhotos: string[] = [];
+    
+    // Добавляем фото из основного раздела
+    const mainPhotos = this.getMediaItems()
       .filter(item => item.type === 'photo')
       .map(item => item.url);
+    allPhotos.push(...mainPhotos);
+    
+    // Добавляем фото из всех папок
+    if (this.folders) {
+      this.folders.forEach(folder => {
+        if (folder.mediaItems) {
+          const folderPhotos = folder.mediaItems
+            .filter((item: any) => item && typeof item === 'object' && item.type === 'photo')
+            .map((item: any) => item.url);
+          allPhotos.push(...folderPhotos);
+        }
+      });
+    }
+    
+    return allPhotos;
   }
 
   openImageCarousel(images: string[], startIndex: number = 0): void {

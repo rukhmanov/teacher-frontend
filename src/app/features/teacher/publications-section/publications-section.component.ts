@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +36,12 @@ export class PublicationsSectionComponent implements OnInit {
   // Состояние развернутости карточек
   expandedCards: Set<string> = new Set();
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -47,6 +53,7 @@ export class PublicationsSectionComponent implements OnInit {
     // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
+      this.resetPagination();
       if (this.username) {
         this.loadPublicPublications();
       } else {
@@ -56,24 +63,83 @@ export class PublicationsSectionComponent implements OnInit {
     });
   }
 
-  loadPublicPublications() {
-    if (this.username) {
-      this.teachersService.getPublications(this.username).subscribe({
-        next: (publications) => {
-          // Фильтруем только публикации
-          this.publications = publications.filter(p => !p.type || p.type === 'publication');
-        },
-      });
-    }
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.publications = [];
   }
 
-  loadOwnPublications() {
-    this.teachersService.getOwnPublications().subscribe({
+  loadPublicPublications(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    // Фильтруем на бэкенде, передавая type='publication'
+    this.teachersService.getPublications(this.username, this.skip, this.take, 'publication').subscribe({
       next: (publications) => {
-        // Фильтруем только публикации
-        this.publications = publications.filter(p => !p.type || p.type === 'publication');
+        if (reset) {
+          this.publications = publications;
+        } else {
+          this.publications = [...this.publications, ...publications];
+        }
+
+        this.hasMore = publications.length === this.take;
+        this.skip += publications.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
+  }
+
+  loadOwnPublications(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    // Фильтруем на бэкенде, передавая type='publication'
+    this.teachersService.getOwnPublications(this.skip, this.take, 'publication').subscribe({
+      next: (publications) => {
+        if (reset) {
+          this.publications = publications;
+        } else {
+          this.publications = [...this.publications, ...publications];
+        }
+
+        this.hasMore = publications.length === this.take;
+        this.skip += publications.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollPercent = (scrollTop + windowHeight) / documentHeight;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил на 80%
+    if (scrollPercent > 0.8) {
+      if (this.username) {
+        this.loadPublicPublications();
+      } else {
+        this.loadOwnPublications();
+      }
+    }
   }
 
   onFileSelect(event: Event) {
@@ -136,7 +202,7 @@ export class PublicationsSectionComponent implements OnInit {
     if (this.editingPublicationId) {
       this.teachersService.updatePublication(this.editingPublicationId, this.newPublication as any).subscribe({
         next: () => {
-          this.loadOwnPublications();
+          this.loadOwnPublications(true);
           this.cancelEdit();
         },
         error: () => {
@@ -149,7 +215,7 @@ export class PublicationsSectionComponent implements OnInit {
     } else {
       this.teachersService.createPublication(this.newPublication as any).subscribe({
         next: () => {
-          this.loadOwnPublications();
+          this.loadOwnPublications(true);
           this.cancelEdit();
         },
         error: () => {
@@ -196,7 +262,7 @@ export class PublicationsSectionComponent implements OnInit {
     if (confirm('Удалить эту публикацию/сертификат?')) {
       this.teachersService.deletePublication(id).subscribe({
         next: () => {
-          this.loadOwnPublications();
+          this.loadOwnPublications(true);
         },
       });
     }
@@ -247,23 +313,12 @@ export class PublicationsSectionComponent implements OnInit {
   getPreviewUrl(fileUrl: string): SafeResourceUrl | null {
     if (!fileUrl) return null;
     
-    const url = fileUrl.toLowerCase();
-    let previewUrl: string | null = null;
-    
-    // Для PPTX файлов используем Office Online Viewer (лучше для PPTX)
-    if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
-      previewUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
-    }
-    // Для PDF используем Google Docs Viewer
-    else if (url.endsWith('.pdf')) {
-      previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-    }
-    // Для ODP используем Google Docs Viewer
-    else if (url.endsWith('.odp')) {
-      previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    // Показываем превью только для изображений и видео
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
     }
     
-    return previewUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(previewUrl) : null;
+    return null;
   }
 
   getViewerUrl(fileUrl: string): SafeResourceUrl | null {
@@ -272,8 +327,8 @@ export class PublicationsSectionComponent implements OnInit {
     const url = fileUrl.toLowerCase();
     let viewerUrl: string | null = null;
     
-    // Для изображений возвращаем прямой URL
-    if (this.isImageFile(fileUrl)) {
+    // Для изображений и видео возвращаем прямой URL
+    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
       viewerUrl = fileUrl;
     }
     // Для Word документов используем Office Online Viewer
@@ -304,17 +359,19 @@ export class PublicationsSectionComponent implements OnInit {
            url.endsWith('.svg');
   }
 
-  isPptxFile(fileUrl: string): boolean {
+  isVideoFile(fileUrl: string): boolean {
     if (!fileUrl) return false;
     const url = fileUrl.toLowerCase();
-    return url.endsWith('.pptx') || url.endsWith('.ppt') || url.endsWith('.pdf') || url.endsWith('.odp');
+    return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || 
+           url.endsWith('.mov') || url.endsWith('.avi') || url.endsWith('.mkv');
   }
+
 
   canViewInBrowser(fileUrl: string): boolean {
     if (!fileUrl) return false;
     const url = fileUrl.toLowerCase();
-    // Поддерживаем изображения, Word документы, PDF, PPTX/PPT, ODP
-    return this.isImageFile(fileUrl) || 
+    // Поддерживаем изображения, видео, Word документы, PDF, PPTX/PPT, ODP
+    return this.isImageFile(fileUrl) || this.isVideoFile(fileUrl) ||
            url.endsWith('.doc') || url.endsWith('.docx') || 
            url.endsWith('.pdf') || 
            url.endsWith('.pptx') || url.endsWith('.ppt') || 

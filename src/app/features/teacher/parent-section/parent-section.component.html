@@ -20,8 +20,10 @@
       <label class="form-label">
         <i class="fas fa-file"></i> Файлы
       </label>
-      <input type="file" class="form-control" (change)="onFileSelect($event)" multiple #fileInput />
-      <small class="form-hint">Можно выбрать несколько файлов (PDF, DOC, DOCX, XLS, XLSX, изображения и др.)</small>
+      <input type="file" class="form-control" (change)="onFileSelect($event)"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput />
+      <small class="form-hint">Можно выбрать несколько файлов: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, изображения,
+        видео (макс. 50 MB)</small>
 
       <!-- Выбранные файлы для загрузки -->
       <div *ngIf="selectedFiles.length > 0" class="selected-files-list">
@@ -104,7 +106,18 @@
       </div>
     </div>
 
-    <div *ngIf="sections.length === 0" class="no-items">
+    <!-- Индикатор загрузки при подгрузке -->
+    <div *ngIf="isLoading && sections.length > 0" class="loading-indicator">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Загрузка разделов...</span>
+    </div>
+
+    <!-- Сообщение, если больше нет разделов -->
+    <div *ngIf="!hasMore && sections.length > 0 && !isLoading" class="no-more-items">
+      <p>Все разделы загружены</p>
+    </div>
+
+    <div *ngIf="sections.length === 0 && !isLoading" class="no-items">
       <div class="empty-state">
         <i class="fas fa-users"></i>
         <h3>Раздел для родителей пуст</h3>
