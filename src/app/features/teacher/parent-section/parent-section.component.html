@@ -79,13 +79,40 @@
         <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ section.files.length }}):</p>
         <div class="files-list">
           <div *ngFor="let file of section.files" class="file-item-wrapper">
-            <a [href]="file" target="_blank" class="file-link">
-              <i class="fas" [ngClass]="getFileIcon(file)"></i>
-              <span>{{ getFileName(file) }}</span>
-            </a>
-            <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModal(file)" title="Просмотреть">
-              <i class="fas fa-eye"></i>
-            </button>
+            <div class="file-item-content">
+              <div class="file-link">
+                <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                <span>{{ getFileName(file) }}</span>
+              </div>
+              <div class="file-actions">
+                <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn-download" title="Скачать">
+                  <i class="fas fa-download"></i>
+                </a>
+                <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModal(file)"
+                  title="Просмотреть">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <!-- Превью для Word документов -->
+            <div *ngIf="isDocxFile(file)" class="docx-preview">
+              <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Загрузка превью...</span>
+              </div>
+              <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                <i class="fas fa-file-word"></i>
+                <p>{{ getDocxPreview(file) }}</p>
+              </div>
+            </div>
+            <!-- Превью для изображений -->
+            <div *ngIf="isImageFile(file)" class="image-preview">
+              <img [src]="getPreviewUrl(file)" [alt]="getFileName(file)" class="preview-image" />
+            </div>
+            <!-- Превью для видео -->
+            <div *ngIf="isVideoFile(file)" class="video-preview">
+              <video [src]="getPreviewUrl(file)" class="preview-video" controls></video>
+            </div>
           </div>
         </div>
       </div>
@@ -145,15 +172,41 @@
           <h4><i class="fas fa-paperclip"></i> Файлы ({{ selectedSection.files.length }}):</h4>
           <div class="files-list">
             <div *ngFor="let file of selectedSection.files" class="file-item-wrapper">
-              <a [href]="file" target="_blank" class="file-link">
-                <i class="fas" [ngClass]="getFileIcon(file)"></i>
-                <span>{{ getFileName(file) }}</span>
-                <i class="fas fa-external-link-alt"></i>
-              </a>
-              <button *ngIf="canViewInBrowser(file)" class="btn btn-primary btn-view" (click)="openViewerModal(file)"
-                title="Просмотреть">
-                <i class="fas fa-eye"></i> Просмотреть
-              </button>
+              <div class="file-item-content">
+                <div class="file-link">
+                  <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                  <span>{{ getFileName(file) }}</span>
+                </div>
+                <div class="file-actions">
+                  <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn btn-primary btn-download"
+                    title="Скачать">
+                    <i class="fas fa-download"></i> Скачать
+                  </a>
+                  <button *ngIf="canViewInBrowser(file)" class="btn btn-primary btn-view"
+                    (click)="openViewerModal(file)" title="Просмотреть">
+                    <i class="fas fa-eye"></i> Просмотреть
+                  </button>
+                </div>
+              </div>
+              <!-- Превью для Word документов -->
+              <div *ngIf="isDocxFile(file)" class="docx-preview">
+                <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Загрузка превью...</span>
+                </div>
+                <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                  <i class="fas fa-file-word"></i>
+                  <p>{{ getDocxPreview(file) }}</p>
+                </div>
+              </div>
+              <!-- Превью для изображений -->
+              <div *ngIf="isImageFile(file)" class="image-preview">
+                <img [src]="getPreviewUrl(file)" [alt]="getFileName(file)" class="preview-image" />
+              </div>
+              <!-- Превью для видео -->
+              <div *ngIf="isVideoFile(file)" class="video-preview">
+                <video [src]="getPreviewUrl(file)" class="preview-video" controls></video>
+              </div>
             </div>
           </div>
         </div>
@@ -172,15 +225,39 @@
       </div>
       <div class="viewer-modal-body">
         <!-- Для изображений используем img -->
-        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="viewerFile" [alt]="viewerFileName"
+        <img *ngIf="isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" [alt]="viewerFileName"
           class="viewer-image" />
-        <!-- Для других файлов используем iframe -->
-        <iframe *ngIf="getViewerUrl(viewerFile) && !isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
-          class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
-        <div *ngIf="!getViewerUrl(viewerFile)" class="viewer-error">
+        <!-- Для видео используем video -->
+        <video *ngIf="isVideoFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" class="viewer-video" controls></video>
+        <!-- Для PDF используем embed для просмотра -->
+        <div *ngIf="isPdfFile(viewerFile)" class="pdf-viewer-container">
+          <div *ngIf="isLoadingPdf" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка PDF...</p>
+          </div>
+          <embed *ngIf="viewerPdfUrl && !isLoadingPdf" [src]="viewerPdfUrl!" type="application/pdf"
+            class="viewer-iframe" (error)="onViewerError()" />
+        </div>
+        <!-- Для Word документов (.docx) показываем конвертированный HTML -->
+        <div *ngIf="isDocxFile(viewerFile)" class="viewer-docx">
+          <div *ngIf="isLoadingDocx" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка документа...</p>
+          </div>
+          <div *ngIf="viewerDocxHtml && !isLoadingDocx" class="docx-content" [innerHTML]="viewerDocxHtml"></div>
+          <div *ngIf="viewerError && !isLoadingDocx" class="viewer-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Не удалось загрузить документ. Попробуйте скачать файл.</p>
+            <a [href]="viewerFile" target="_blank" class="btn btn-primary" download>
+              <i class="fas fa-download"></i> Скачать файл
+            </a>
+          </div>
+        </div>
+        <!-- Для файлов, которые нельзя просмотреть -->
+        <div *ngIf="!getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !viewerError" class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
-          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
-          <a [href]="viewerFile" target="_blank" class="btn btn-primary">
+          <p>Предварительный просмотр недоступен для этого типа файла.</p>
+          <a [href]="viewerFile" target="_blank" class="btn btn-primary" download>
             <i class="fas fa-download"></i> Скачать файл
           </a>
         </div>
