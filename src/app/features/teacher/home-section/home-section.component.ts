@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl, SafeHtml } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UploadService } from '../../../core/services/upload.service';
@@ -31,6 +32,8 @@ export class HomeSectionComponent implements OnInit {
     title: '',
     content: '',
     images: [] as string[],
+    videos: [] as string[],
+    files: [] as string[],
     fileUrl: '',
     cardColor: '',
   };
@@ -40,9 +43,13 @@ export class HomeSectionComponent implements OnInit {
 
   selectedImages: File[] = [];
   imagePreviews: string[] = [];
+  selectedFiles: File[] = [];
   selectedFile: File | null = null;
   useFileUpload = false;
   isUploading = false;
+  
+  // Для inline редактирования
+  editingPost: Post | null = null;
   
   // Карусель изображений
   showCarousel: boolean = false;
@@ -279,8 +286,69 @@ export class HomeSectionComponent implements OnInit {
   onFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
+      this.selectedFiles = Array.from(input.files);
+      this.selectedFile = this.selectedFiles[0]; // Для обратной совместимости
     }
+  }
+  
+  removeSelectedFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+    if (this.selectedFiles.length > 0) {
+      this.selectedFile = this.selectedFiles[0];
+    } else {
+      this.selectedFile = null;
+    }
+  }
+  
+  removeFileFromPost(postId: string, fileUrl: string, type: 'image' | 'video' | 'file') {
+    const post = this.posts.find(p => p.id === postId);
+    if (!post) return;
+    
+    // Обновляем локальное состояние
+    if (type === 'image' && post.images) {
+      post.images = post.images.filter(img => img !== fileUrl);
+    } else if (type === 'video' && post.videos) {
+      post.videos = post.videos.filter(vid => vid !== fileUrl);
+    } else if (type === 'file' && post.files) {
+      post.files = post.files.filter(f => f !== fileUrl);
+    }
+    
+    // Если файл был в fileUrl, очищаем его
+    if (post.fileUrl === fileUrl) {
+      post.fileUrl = '';
+    }
+    
+    // Обновляем редактируемый пост, если он открыт
+    if (this.editingPost && this.editingPost.id === postId) {
+      if (type === 'image' && this.editingPost.images) {
+        this.editingPost.images = this.editingPost.images.filter(img => img !== fileUrl);
+      } else if (type === 'video' && this.editingPost.videos) {
+        this.editingPost.videos = this.editingPost.videos.filter(vid => vid !== fileUrl);
+      } else if (type === 'file' && this.editingPost.files) {
+        this.editingPost.files = this.editingPost.files.filter(f => f !== fileUrl);
+      }
+      if (this.editingPost.fileUrl === fileUrl) {
+        this.editingPost.fileUrl = '';
+      }
+    }
+    
+    // Обновляем пост на сервере
+    const updateData: any = {};
+    if (type === 'image') updateData.images = post.images || [];
+    if (type === 'video') updateData.videos = post.videos || [];
+    if (type === 'file') updateData.files = post.files || [];
+    if (post.fileUrl === '') updateData.fileUrl = '';
+    
+    this.teachersService.updatePost(postId, updateData).subscribe({
+      next: () => {
+        this.loadOwnPosts(true);
+      },
+      error: (err) => {
+        console.error('Error removing file:', err);
+        // Восстанавливаем состояние при ошибке
+        this.loadOwnPosts(true);
+      },
+    });
   }
 
   switchToUrl() {
@@ -307,11 +375,102 @@ export class HomeSectionComponent implements OnInit {
     return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || 
            url.endsWith('.mov') || url.endsWith('.avi') || url.endsWith('.mkv');
   }
+  
+  isPptxFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    const url = fileUrl.toLowerCase();
+    return url.endsWith('.pptx') || url.endsWith('.ppt');
+  }
+  
+  getMediaItems(post: Post): Array<{type: 'photo' | 'video', url: string}> {
+    const items: Array<{type: 'photo' | 'video', url: string}> = [];
+    if (post.images) {
+      post.images.forEach(img => items.push({ type: 'photo', url: img }));
+    }
+    if (post.videos) {
+      post.videos.forEach(vid => items.push({ type: 'video', url: vid }));
+    }
+    // Также проверяем fileUrl, если это изображение или видео
+    if (post.fileUrl) {
+      if (this.isImageFile(post.fileUrl)) {
+        items.push({ type: 'photo', url: post.fileUrl });
+      } else if (this.isVideoFile(post.fileUrl)) {
+        items.push({ type: 'video', url: post.fileUrl });
+      }
+    }
+    return items;
+  }
+  
+  getOtherFiles(post: Post): string[] {
+    const files: string[] = [];
+    if (post.files) {
+      files.push(...post.files.filter(f => f != null && f !== ''));
+    }
+    // fileUrl добавляем только если это не изображение и не видео
+    if (post.fileUrl && !this.isImageFile(post.fileUrl) && !this.isVideoFile(post.fileUrl)) {
+      files.push(post.fileUrl);
+    }
+    return files;
+  }
+  
+  /**
+   * Получить все файлы поста (изображения, видео и другие файлы)
+   */
+  getAllFiles(post: Post): string[] {
+    const allFiles: string[] = [];
+    
+    // Добавляем изображения
+    if (post.images) {
+      allFiles.push(...post.images.filter(img => img != null && img !== ''));
+    }
+    
+    // Добавляем видео
+    if (post.videos) {
+      allFiles.push(...post.videos.filter(vid => vid != null && vid !== ''));
+    }
+    
+    // Добавляем другие файлы
+    if (post.files) {
+      allFiles.push(...post.files.filter(f => f != null && f !== ''));
+    }
+    
+    // Добавляем fileUrl, если он есть
+    if (post.fileUrl && post.fileUrl.trim() !== '') {
+      allFiles.push(post.fileUrl);
+    }
+    
+    return allFiles;
+  }
+  
+  getPhotoUrls(post: Post): string[] {
+    return this.getMediaItems(post)
+      .filter(item => item.type === 'photo')
+      .map(item => item.url);
+  }
+  
+  getPhotoIndex(post: Post, mediaItem: {type: 'photo' | 'video', url: string}): number {
+    // Возвращаем индекс только среди фото
+    const photoUrls = this.getPhotoUrls(post);
+    return photoUrls.indexOf(mediaItem.url);
+  }
 
   getFileName(fileUrl: string): string {
     if (!fileUrl) return '';
     const parts = fileUrl.split('/');
     return parts[parts.length - 1] || fileUrl;
+  }
+  
+  /**
+   * Определяет тип файла для удаления
+   */
+  getFileType(fileUrl: string): 'image' | 'video' | 'file' {
+    if (this.isImageFile(fileUrl)) {
+      return 'image';
+    } else if (this.isVideoFile(fileUrl)) {
+      return 'video';
+    } else {
+      return 'file';
+    }
   }
 
   getFileIcon(fileUrl: string): string {
@@ -329,7 +488,8 @@ export class HomeSectionComponent implements OnInit {
     return fileUrl.toLowerCase().endsWith('.pdf');
   }
 
-  isDocxFile(fileUrl: string): boolean {
+  isDocxFile(fileUrl: string | undefined): boolean {
+    if (!fileUrl) return false;
     return this.docxViewerService.isDocxFile(fileUrl);
   }
 
@@ -349,20 +509,22 @@ export class HomeSectionComponent implements OnInit {
     else if (this.isPdfFile(fileUrl)) {
       return this.sanitizer.bypassSecurityTrustResourceUrl(this.getProxyUrl(fileUrl));
     }
+    // Для PPTX используем Office Online Viewer (пока без локального решения)
+    else if (this.isPptxFile(fileUrl)) {
+      const viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(this.getPreviewUrl(fileUrl))}`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl);
+    }
     return null;
   }
 
   /**
    * Получает URL для превью файла (изображения, видео)
-   * Использует прокси для относительных путей, прямой URL для полных
+   * Всегда использует прокси для обхода проблем с CORS
+   * Бэкенд автоматически извлекает относительный путь из полного URL
    */
   getPreviewUrl(fileUrl: string): string {
     if (!fileUrl) return '';
-    // Если это уже полный URL, возвращаем его
-    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
-      return fileUrl;
-    }
-    // Иначе, используем прокси
+    // Всегда используем прокси - бэкенд сам извлечет относительный путь из полного URL
     return this.getProxyUrl(fileUrl);
   }
 
@@ -370,43 +532,32 @@ export class HomeSectionComponent implements OnInit {
    * Получает прокси URL для просмотра файла (без параметра download)
    */
   private getProxyUrl(fileUrl: string): string {
-    let relativePath = fileUrl;
-
-    try {
-      const url = new URL(fileUrl);
-      relativePath = url.pathname.substring(1);
-    } catch (e) {
-      // Если не удалось распарсить как URL, используем как есть
-    }
-
-    // Используем прокси endpoint для просмотра (без download=true)
-    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}`;
+    // Передаем URL как есть (может быть полным или относительным)
+    // Бэкенд сам извлечет относительный путь через FilePathUtil.extractRelativePath
+    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(fileUrl)}`;
   }
 
   /**
    * Получает URL для скачивания файла (через прокси с параметром download=true)
    */
   getDownloadUrl(fileUrl: string): string {
-    let relativePath = fileUrl;
-
-    try {
-      const url = new URL(fileUrl);
-      relativePath = url.pathname.substring(1);
-    } catch (e) {
-      // Если не удалось распарсить как URL, используем как есть
+    // Если это полный URL (внешний), передаем его целиком в прокси
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(fileUrl)}&download=true`;
     }
-
-    // Используем прокси endpoint для скачивания с download=true
-    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}&download=true`;
+    
+    // Для относительных путей используем как есть
+    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(fileUrl)}&download=true`;
   }
 
   canViewInBrowser(fileUrl: string): boolean {
     if (!fileUrl) return false;
-    // Поддерживаем изображения, видео, PDF и Word документы (.docx)
+    // Поддерживаем изображения, видео, PDF, Word документы (.docx) и PowerPoint (.pptx)
     return this.isImageFile(fileUrl) ||
            this.isVideoFile(fileUrl) ||
            this.isPdfFile(fileUrl) ||
-           this.docxViewerService.isDocxFile(fileUrl);
+           this.docxViewerService.isDocxFile(fileUrl) ||
+           this.isPptxFile(fileUrl);
   }
 
   openViewerModal(post: Post): void {
@@ -461,7 +612,8 @@ export class HomeSectionComponent implements OnInit {
     return this.getPreviewUrl(fileUrl);
   }
 
-  getDocxPreview(fileUrl: string): string | null {
+  getDocxPreview(fileUrl: string | undefined): string | null {
+    if (!fileUrl) return null;
     return this.docxPreviews.get(fileUrl) || null;
   }
 
@@ -489,7 +641,8 @@ export class HomeSectionComponent implements OnInit {
     });
   }
 
-  isLoadingPreview(fileUrl: string): boolean {
+  isLoadingPreview(fileUrl: string | undefined): boolean {
+    if (!fileUrl) return false;
     return this.loadingPreviews.has(fileUrl);
   }
 
@@ -509,22 +662,59 @@ export class HomeSectionComponent implements OnInit {
   }
 
   private continuePostCreation() {
-    if (this.useFileUpload) {
-      if (!this.selectedFile) {
-        alert('Пожалуйста, выберите файл для загрузки');
-        this.isUploading = false;
-        return;
-      }
+    if (this.useFileUpload && this.selectedFiles.length > 0) {
       this.isUploading = true;
-      this.uploadService.uploadFile(this.selectedFile).subscribe({
-        next: (response) => {
-          this.newPost.fileUrl = response.url;
+      
+      // Загружаем все файлы параллельно
+      const uploadObservables = this.selectedFiles.map(file => {
+        if (file.type.startsWith('image/')) {
+          return this.uploadService.uploadImage(file).pipe(
+            map(response => ({ type: 'image' as const, url: response.url }))
+          );
+        } else if (file.type.startsWith('video/')) {
+          return this.uploadService.uploadFile(file).pipe(
+            map(response => ({ type: 'video' as const, url: response.url }))
+          );
+        } else {
+          return this.uploadService.uploadFile(file).pipe(
+            map(response => ({ type: 'file' as const, url: response.url }))
+          );
+        }
+      });
+      
+      forkJoin(uploadObservables).subscribe({
+        next: (results) => {
+          // Разделяем файлы по типам
+          const images: string[] = [];
+          const videos: string[] = [];
+          const files: string[] = [];
+          
+          results.forEach(result => {
+            if (result.type === 'image') {
+              images.push(result.url);
+            } else if (result.type === 'video') {
+              videos.push(result.url);
+            } else {
+              files.push(result.url);
+            }
+          });
+          
+          // Если только один файл, используем fileUrl для обратной совместимости
+          if (results.length === 1 && results[0].type === 'file') {
+            this.newPost.fileUrl = results[0].url;
+          } else {
+            // Иначе используем массивы
+            this.newPost.images = [...(this.newPost.images || []), ...images];
+            this.newPost.videos = [...(this.newPost.videos || []), ...videos];
+            this.newPost.files = [...(this.newPost.files || []), ...files];
+          }
+          
           this.submitPost();
         },
         error: (err) => {
-          console.error('Error uploading file:', err);
+          console.error('Error uploading files:', err);
           this.isUploading = false;
-          this.submitPost();
+          alert('Ошибка при загрузке файлов');
         },
       });
     } else {
@@ -563,27 +753,121 @@ export class HomeSectionComponent implements OnInit {
   }
 
   editPost(post: Post) {
+    // Переключаемся в режим inline редактирования
     this.editingPostId = post.id;
-    this.newPost = {
-      title: post.title,
-      content: post.content,
-      images: [...(post.images || [])],
-      fileUrl: post.fileUrl || '',
-      cardColor: post.cardColor || '',
+    this.editingPost = { ...post };
+    this.cancelEdit(); // Закрываем форму, если открыта
+  }
+  
+  startInlineEdit(post: Post) {
+    this.editingPostId = post.id;
+    this.editingPost = { ...post };
+  }
+  
+  cancelInlineEdit() {
+    this.editingPostId = null;
+    this.editingPost = null;
+    this.loadOwnPosts(true); // Перезагружаем для восстановления исходных данных
+  }
+  
+  saveInlineEdit() {
+    if (!this.editingPost || !this.editingPostId) return;
+    
+    if (!this.editingPost.title) {
+      alert('Пожалуйста, введите заголовок');
+      return;
+    }
+    
+    this.isUploading = true;
+    
+    // Загружаем новые файлы, если есть
+    if (this.selectedFiles.length > 0) {
+      const uploadObservables = this.selectedFiles.map(file => {
+        if (file.type.startsWith('image/')) {
+          return this.uploadService.uploadImage(file).pipe(
+            map(response => ({ type: 'image' as const, url: response.url }))
+          );
+        } else if (file.type.startsWith('video/')) {
+          return this.uploadService.uploadFile(file).pipe(
+            map(response => ({ type: 'video' as const, url: response.url }))
+          );
+        } else {
+          return this.uploadService.uploadFile(file).pipe(
+            map(response => ({ type: 'file' as const, url: response.url }))
+          );
+        }
+      });
+      
+      forkJoin(uploadObservables).subscribe({
+        next: (results) => {
+          const images: string[] = [];
+          const videos: string[] = [];
+          const files: string[] = [];
+          
+          results.forEach(result => {
+            if (result.type === 'image') {
+              images.push(result.url);
+            } else if (result.type === 'video') {
+              videos.push(result.url);
+            } else {
+              files.push(result.url);
+            }
+          });
+          
+          this.editingPost!.images = [...(this.editingPost!.images || []), ...images];
+          this.editingPost!.videos = [...(this.editingPost!.videos || []), ...videos];
+          this.editingPost!.files = [...(this.editingPost!.files || []), ...files];
+          
+          this.submitInlineEdit();
+        },
+        error: (err) => {
+          console.error('Error uploading files:', err);
+          this.isUploading = false;
+          alert('Ошибка при загрузке файлов');
+        },
+      });
+    } else {
+      this.submitInlineEdit();
+    }
+  }
+  
+  submitInlineEdit() {
+    if (!this.editingPost || !this.editingPostId) return;
+    
+    const updateData: any = {
+      title: this.editingPost.title,
+      content: this.editingPost.content,
+      cardColor: this.editingPost.cardColor || '',
     };
-    this.selectedImages = [];
-    this.imagePreviews = [];
-    this.selectedFile = null;
-    this.useFileUpload = !!post.fileUrl;
-    this.showPostForm = true;
+    
+    if (this.editingPost.images) updateData.images = this.editingPost.images;
+    if (this.editingPost.videos) updateData.videos = this.editingPost.videos;
+    if (this.editingPost.files) updateData.files = this.editingPost.files;
+    if (this.editingPost.fileUrl) updateData.fileUrl = this.editingPost.fileUrl;
+    
+    this.teachersService.updatePost(this.editingPostId, updateData).subscribe({
+      next: () => {
+        this.isUploading = false;
+        this.selectedFiles = [];
+        this.selectedFile = null;
+        this.cancelInlineEdit();
+      },
+      error: (err) => {
+        console.error('Error updating post:', err);
+        this.isUploading = false;
+      },
+    });
   }
 
   cancelEdit() {
     this.showPostForm = false;
-    this.editingPostId = null;
-    this.newPost = { title: '', content: '', images: [], fileUrl: '', cardColor: '' };
+    if (!this.editingPost) {
+      this.editingPostId = null;
+    }
+    this.newPost = { title: '', content: '', images: [], videos: [], files: [], fileUrl: '', cardColor: '' };
     this.selectedImages = [];
     this.imagePreviews = [];
+    this.selectedFiles = [];
     this.selectedFile = null;
     this.useFileUpload = false;
   }
@@ -601,6 +885,11 @@ export class HomeSectionComponent implements OnInit {
   onImageError(event: Event, type: 'avatar' | 'post' | 'gallery' = 'avatar') {
     const img = event.target as HTMLImageElement;
     if (img) {
+      // Предотвращаем бесконечный цикл - если уже placeholder, не заменяем
+      if (img.src && img.src.startsWith('data:image/svg+xml')) {
+        return;
+      }
+      
       switch (type) {
         case 'avatar':
           img.src = this.placeholder.getAvatarPlaceholder();
@@ -615,6 +904,26 @@ export class HomeSectionComponent implements OnInit {
           img.src = this.placeholder.getAvatarPlaceholder();
       }
     }
+  }
+
+  /**
+   * Обработчик загрузки метаданных видео - устанавливает первый кадр
+   */
+  onVideoLoaded(event: Event): void {
+    const video = event.target as HTMLVideoElement;
+    if (video && video.readyState >= 1) {
+      // Устанавливаем время на первый кадр для показа постера
+      video.currentTime = 0.1;
+      // Предотвращаем автовоспроизведение
+      video.pause();
+    }
+  }
+
+  /**
+   * TrackBy функция для оптимизации рендеринга списка медиа-элементов
+   */
+  trackByMediaItem(index: number, item: {type: 'photo' | 'video', url: string}): string {
+    return item.url;
   }
 
   isCardExpanded(postId: string): boolean {
@@ -663,7 +972,16 @@ export class HomeSectionComponent implements OnInit {
   }
 
   getImageUrl(url: string | null | undefined, type: 'avatar' | 'post' | 'gallery' = 'post'): string {
-    return PlaceholderUtil.getImageUrl(url, type);
+    if (!url || url.trim() === '') {
+      return PlaceholderUtil.getImageUrl(null, type);
+    }
+    // Используем getPreviewUrl для получения правильного URL через прокси
+    const previewUrl = this.getPreviewUrl(url);
+    // Если previewUrl пустой, возвращаем placeholder
+    if (!previewUrl || previewUrl.trim() === '') {
+      return PlaceholderUtil.getImageUrl(null, type);
+    }
+    return PlaceholderUtil.getImageUrl(previewUrl, type);
   }
 
   openImageCarousel(images: string[], startIndex: number = 0): void {

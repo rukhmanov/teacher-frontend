@@ -40,15 +40,23 @@
                 placeholder="Вставьте ссылку на файл" />
             </div>
             <div *ngIf="useFileUpload" class="file-upload-group">
-              <input type="file" class="form-control" (change)="onFileSelect($event)"
+              <input type="file" class="form-control" (change)="onFileSelect($event)" multiple
                 accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.mp4,.webm,.ogg,.mov,.avi,.mkv"
                 #fileInput />
-              <small class="form-hint" *ngIf="selectedFile">
-                Выбран файл: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
-              </small>
-              <small class="form-hint" *ngIf="!selectedFile">
+              <div *ngIf="selectedFiles.length > 0" class="selected-files-list">
+                <div class="selected-files-title">Выбранные файлы ({{ selectedFiles.length }}):</div>
+                <div *ngFor="let file of selectedFiles; let i = index" class="file-item">
+                  <i class="fas"
+                    [ngClass]="file.type.startsWith('image/') ? 'fa-file-image' : file.type.startsWith('video/') ? 'fa-file-video' : 'fa-file'"></i>
+                  <span>{{ file.name }} ({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                  <button type="button" class="btn-remove-file" (click)="removeSelectedFile(i)" title="Удалить">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+              <small class="form-hint" *ngIf="selectedFiles.length === 0">
                 Поддерживаемые форматы: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, изображения (JPG, PNG, GIF, WEBP,
-                BMP, SVG), видео (MP4, WEBM, OGG, MOV, AVI, MKV) (макс. 50 MB)
+                BMP, SVG), видео (MP4, WEBM, OGG, MOV, AVI, MKV) (макс. 50 MB). Можно выбрать несколько файлов.
               </small>
             </div>
             <!-- Превью файла (только для изображений и видео) -->
@@ -83,122 +91,182 @@
 
       <div class="posts-list">
         <div *ngFor="let post of posts" class="post-card card" [style.background-color]="post.cardColor || null">
-          <div class="post-header">
-            <h3>{{ post.title }}</h3>
-            <span class="post-date">
-              {{ post.createdAt | date: 'dd.MM.yyyy' }}
-            </span>
-          </div>
-          <div class="post-content">
-            <p *ngIf="post.content" [class.expanded]="isCardExpanded(post.id!)" class="post-text description-text">
-              {{ post.content }}
-            </p>
-            <div *ngIf="post.images && post.images.length > 0" class="post-images">
-              <ng-container *ngFor="let image of post.images; let i = index">
-                <img *ngIf="i < 3" [src]="getImageUrl(image, 'post')" alt="Post image"
-                  (error)="onImageError($event, 'post')" (click)="openImageCarousel(post.images || [], i)"
-                  class="clickable-image" />
-              </ng-container>
+          <!-- Режим редактирования на месте -->
+          <div *ngIf="editingPostId === post.id && editingPost" class="post-edit-inline">
+            <div class="form-group">
+              <input type="text" class="form-control" [(ngModel)]="editingPost.title" placeholder="Заголовок" />
             </div>
-            <div *ngIf="post.images && post.images.length > 3" class="images-more">
-              <p>+{{ post.images.length - 3 }} изображений</p>
+            <div class="form-group">
+              <textarea class="form-control" [(ngModel)]="editingPost.content" rows="4"
+                placeholder="Содержание"></textarea>
             </div>
-          </div>
-          <!-- Файлы: fileUrl или files -->
-          <div *ngIf="post.fileUrl || (post.files && post.files.length > 0)" class="section-files">
-            <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ (post.fileUrl ? 1 : 0) + (post.files?.length || 0) }}):</p>
-            <div class="files-list">
-              <!-- fileUrl -->
-              <div *ngIf="post.fileUrl" class="file-item-wrapper">
-                <div class="file-item-content">
-                  <div class="file-link">
-                    <i class="fas" [ngClass]="getFileIcon(post.fileUrl!)"></i>
-                    <span>{{ getFileName(post.fileUrl!) }}</span>
-                  </div>
-                  <div class="file-actions">
-                    <a [href]="getDownloadUrl(post.fileUrl!)" [download]="getFileName(post.fileUrl!)" class="btn-download" title="Скачать">
-                      <i class="fas fa-download"></i>
-                    </a>
-                    <button *ngIf="canViewInBrowser(post.fileUrl!)" class="btn-view" (click)="openViewerModalForFile(post.fileUrl!)"
-                      title="Просмотреть">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </div>
-                </div>
-                <!-- Превью для Word документов -->
-                <div *ngIf="isDocxFile(post.fileUrl!)" class="docx-preview">
-                  <div *ngIf="isLoadingPreview(post.fileUrl!)" class="preview-loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Загрузка превью...</span>
-                  </div>
-                  <div *ngIf="getDocxPreview(post.fileUrl!) && !isLoadingPreview(post.fileUrl!)" class="preview-text">
-                    <i class="fas fa-file-word"></i>
-                    <p>{{ getDocxPreview(post.fileUrl!) }}</p>
-                  </div>
-                </div>
-                <!-- Превью для изображений -->
-                <div *ngIf="isImageFile(post.fileUrl!)" class="image-preview">
-                  <img [src]="getPreviewUrl(post.fileUrl!)" [alt]="getFileName(post.fileUrl!)" class="preview-image" />
-                </div>
-                <!-- Превью для видео -->
-                <div *ngIf="isVideoFile(post.fileUrl!)" class="video-preview">
-                  <video [src]="getPreviewUrl(post.fileUrl!)" class="preview-video" controls></video>
+            <div class="form-group">
+              <input type="file" class="form-control" (change)="onFileSelect($event)" multiple
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.mp4,.webm,.ogg,.mov,.avi,.mkv" />
+              <div *ngIf="selectedFiles.length > 0" class="selected-files-list">
+                <div *ngFor="let file of selectedFiles; let i = index" class="file-item">
+                  <i class="fas"
+                    [ngClass]="file.type.startsWith('image/') ? 'fa-file-image' : file.type.startsWith('video/') ? 'fa-file-video' : 'fa-file'"></i>
+                  <span>{{ file.name }}</span>
+                  <button type="button" class="btn-remove-file" (click)="removeSelectedFile(i)">
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
               </div>
-              <!-- files (массив) -->
-              <ng-container *ngFor="let file of post.files">
-                <div *ngIf="file" class="file-item-wrapper">
-                <div class="file-item-content">
-                  <div class="file-link">
-                    <i class="fas" [ngClass]="getFileIcon(file!)"></i>
-                    <span>{{ getFileName(file!) }}</span>
-                  </div>
-                  <div class="file-actions">
-                    <a [href]="getDownloadUrl(file!)" [download]="getFileName(file!)" class="btn-download" title="Скачать">
-                      <i class="fas fa-download"></i>
-                    </a>
-                    <button *ngIf="canViewInBrowser(file!)" class="btn-view" (click)="openViewerModalForFile(file!)"
-                      title="Просмотреть">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </div>
+            </div>
+            <!-- Masonry галерея для фото и видео с возможностью удаления -->
+            <div *ngIf="editingPost && getMediaItems(editingPost).length > 0" class="masonry-gallery">
+              <div *ngFor="let mediaItem of getMediaItems(editingPost); trackBy: trackByMediaItem" class="masonry-item"
+                [class.photo]="mediaItem.type === 'photo'" [class.video]="mediaItem.type === 'video'">
+                <div class="media-wrapper">
+                  <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url, 'post')" alt="Photo"
+                    (error)="onImageError($event, 'post')"
+                    (click)="openImageCarousel(getPhotoUrls(editingPost!), getPhotoIndex(editingPost!, mediaItem))"
+                    class="clickable-image" loading="lazy" />
+                  <video *ngIf="mediaItem.type === 'video'" [src]="getPreviewUrl(mediaItem.url)" controls
+                    (error)="onImageError($event, 'post')" preload="metadata"
+                    (loadedmetadata)="onVideoLoaded($event)"></video>
+                  <button *ngIf="isEditMode && post.id" class="btn-delete-media"
+                    (click)="removeFileFromPost(post.id!, mediaItem.url, mediaItem.type === 'photo' ? 'image' : 'video')"
+                    title="Удалить">
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
-                <!-- Превью для Word документов -->
-                <div *ngIf="isDocxFile(file!)" class="docx-preview">
-                  <div *ngIf="isLoadingPreview(file!)" class="preview-loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Загрузка превью...</span>
-                  </div>
-                  <div *ngIf="getDocxPreview(file!) && !isLoadingPreview(file!)" class="preview-text">
-                    <i class="fas fa-file-word"></i>
-                    <p>{{ getDocxPreview(file!) }}</p>
-                  </div>
+              </div>
+            </div>
+            <!-- Другие файлы с возможностью удаления -->
+            <div *ngIf="editingPost && getOtherFiles(editingPost).length > 0" class="section-files">
+              <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ editingPost ?
+                getOtherFiles(editingPost).length : 0 }}):</p>
+              <div class="files-list">
+                <div *ngFor="let file of editingPost ? getOtherFiles(editingPost) : []" class="file-item-wrapper">
+                  <ng-container *ngIf="file">
+                    <div class="file-item-content">
+                      <div class="file-link">
+                        <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                        <span>{{ getFileName(file) }}</span>
+                      </div>
+                      <div class="file-actions">
+                        <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn-download"
+                          title="Скачать">
+                          <i class="fas fa-download"></i>
+                        </a>
+                        <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModalForFile(file)"
+                          title="Просмотреть">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button *ngIf="isEditMode && post.id" class="btn-delete-file"
+                          (click)="removeFileFromPost(post.id!, file, 'file')" title="Удалить">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Превью для Word документов -->
+                    <div *ngIf="isDocxFile(file)" class="docx-preview">
+                      <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Загрузка превью...</span>
+                      </div>
+                      <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                        <i class="fas fa-file-word"></i>
+                        <p>{{ getDocxPreview(file) }}</p>
+                      </div>
+                    </div>
+                  </ng-container>
                 </div>
-                <!-- Превью для изображений -->
-                <div *ngIf="isImageFile(file!)" class="image-preview">
-                  <img [src]="getPreviewUrl(file!)" [alt]="getFileName(file!)" class="preview-image" />
-                </div>
-                <!-- Превью для видео -->
-                <div *ngIf="isVideoFile(file!)" class="video-preview">
-                  <video [src]="getPreviewUrl(file!)" class="preview-video" controls></video>
-                </div>
-                </div>
-              </ng-container>
+              </div>
+            </div>
+            <div class="inline-edit-actions">
+              <button class="btn btn-primary" (click)="saveInlineEdit()" [disabled]="isUploading">
+                <i class="fas fa-save"></i> Сохранить
+              </button>
+              <button class="btn btn-secondary" (click)="cancelInlineEdit()" [disabled]="isUploading">
+                <i class="fas fa-times"></i> Отменить
+              </button>
             </div>
           </div>
-          <div class="post-footer">
-            <button *ngIf="shouldShowExpandButton(post)" class="btn-expand" (click)="toggleCardExpansion(post.id!)">
-              <i class="fas" [class.fa-chevron-down]="!isCardExpanded(post.id!)"
-                [class.fa-chevron-up]="isCardExpanded(post.id!)"></i>
-              {{ isCardExpanded(post.id!) ? 'Свернуть' : 'Смотреть все' }}
-            </button>
-            <div class="post-actions">
-              <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPost(post)">
-                <i class="fas fa-edit"></i> <span>Редактировать</span>
+
+          <!-- Обычный режим просмотра -->
+          <div *ngIf="editingPostId !== post.id">
+            <div class="post-header">
+              <h3>{{ post.title }}</h3>
+              <span class="post-date">
+                {{ post.createdAt | date: 'dd.MM.yyyy' }}
+              </span>
+            </div>
+            <div class="post-content">
+              <p *ngIf="post.content" [class.expanded]="isCardExpanded(post.id!)" class="post-text description-text">
+                {{ post.content }}
+              </p>
+
+              <!-- Masonry галерея для фото и видео -->
+              <div *ngIf="getMediaItems(post).length > 0" class="masonry-gallery">
+                <div *ngFor="let mediaItem of getMediaItems(post); trackBy: trackByMediaItem" class="masonry-item"
+                  [class.photo]="mediaItem.type === 'photo'" [class.video]="mediaItem.type === 'video'">
+                  <div class="media-wrapper">
+                    <img *ngIf="mediaItem.type === 'photo'" [src]="getImageUrl(mediaItem.url, 'post')" alt="Photo"
+                      (error)="onImageError($event, 'post')"
+                      (click)="openImageCarousel(getPhotoUrls(post), getPhotoIndex(post, mediaItem))"
+                      class="clickable-image" loading="lazy" />
+                    <video *ngIf="mediaItem.type === 'video'" [src]="getPreviewUrl(mediaItem.url)" controls
+                      (error)="onImageError($event, 'post')" preload="metadata"
+                      (loadedmetadata)="onVideoLoaded($event)"></video>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Другие файлы (не фото/видео) -->
+              <div *ngIf="getOtherFiles(post).length > 0" class="section-files">
+                <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ getOtherFiles(post).length }}):</p>
+                <div class="files-list">
+                  <div *ngFor="let file of getOtherFiles(post)" class="file-item-wrapper">
+                    <ng-container *ngIf="file">
+                      <div class="file-item-content">
+                        <div class="file-link">
+                          <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                          <span>{{ getFileName(file) }}</span>
+                        </div>
+                        <div class="file-actions">
+                          <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn-download"
+                            title="Скачать">
+                            <i class="fas fa-download"></i>
+                          </a>
+                          <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModalForFile(file)"
+                            title="Просмотреть">
+                            <i class="fas fa-eye"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <!-- Превью для Word документов -->
+                      <div *ngIf="isDocxFile(file)" class="docx-preview">
+                        <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                          <i class="fas fa-spinner fa-spin"></i>
+                          <span>Загрузка превью...</span>
+                        </div>
+                        <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                          <i class="fas fa-file-word"></i>
+                          <p>{{ getDocxPreview(file) }}</p>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="post-footer">
+              <button *ngIf="shouldShowExpandButton(post)" class="btn-expand" (click)="toggleCardExpansion(post.id!)">
+                <i class="fas" [class.fa-chevron-down]="!isCardExpanded(post.id!)"
+                  [class.fa-chevron-up]="isCardExpanded(post.id!)"></i>
+                {{ isCardExpanded(post.id!) ? 'Свернуть' : 'Смотреть все' }}
               </button>
-              <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePost(post.id)">
-                <i class="fas fa-trash"></i> <span>Удалить</span>
-              </button>
+              <div class="post-actions">
+                <button *ngIf="isEditMode" class="btn btn-primary" (click)="startInlineEdit(post)">
+                  <i class="fas fa-edit"></i> <span>Редактировать</span>
+                </button>
+                <button *ngIf="isEditMode" class="btn btn-secondary" (click)="deletePost(post.id)">
+                  <i class="fas fa-trash"></i> <span>Удалить</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -281,15 +349,15 @@
       </div>
       <div class="viewer-modal-body">
         <!-- Для изображений используем img -->
-        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" [alt]="viewerFileName"
-          class="viewer-image" />
+        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
+          [alt]="viewerFileName" class="viewer-image" />
         <!-- Для видео используем video -->
         <video *ngIf="getViewerUrl(viewerFile) && isVideoFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
           class="viewer-video" controls></video>
         <!-- Для PDF используем embed для просмотра -->
         <div *ngIf="isPdfFile(viewerFile)" class="pdf-viewer-container">
-          <embed [src]="getViewerUrl(viewerFile)!" type="application/pdf"
-            class="viewer-iframe" (error)="viewerError = true" />
+          <embed [src]="getViewerUrl(viewerFile)!" type="application/pdf" class="viewer-iframe"
+            (error)="viewerError = true" />
         </div>
         <!-- Для Word документов (.docx) показываем конвертированный HTML -->
         <div *ngIf="isDocxFile(viewerFile)" class="viewer-docx">
@@ -306,8 +374,14 @@
             </a>
           </div>
         </div>
+        <!-- Для PowerPoint (.pptx/.ppt) используем Office Online Viewer -->
+        <div *ngIf="isPptxFile(viewerFile)" class="pptx-viewer-container">
+          <iframe [src]="getViewerUrl(viewerFile)!" class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
+        </div>
         <!-- Для файлов, которые нельзя просмотреть -->
-        <div *ngIf="viewerFile && !getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !isPdfFile(viewerFile) && !isVideoFile(viewerFile) && !viewerError" class="viewer-error">
+        <div
+          *ngIf="viewerFile && !getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !isPdfFile(viewerFile) && !isVideoFile(viewerFile) && !isPptxFile(viewerFile) && !viewerError"
+          class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Предварительный просмотр недоступен для этого типа файла.</p>
           <a [href]="getDownloadUrl(viewerFile!)" target="_blank" class="btn btn-primary" [download]="viewerFileName">

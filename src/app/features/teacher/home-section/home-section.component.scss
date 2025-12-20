@@ -614,6 +614,188 @@
       }
     }
   }
+  
+  .masonry-gallery {
+    columns: 4;
+    column-gap: 1.5rem;
+    margin: 1.5rem 0;
+
+    @media (max-width: 1200px) {
+      columns: 3;
+    }
+
+    @media (max-width: 768px) {
+      columns: 2;
+    }
+
+    @media (max-width: 480px) {
+      columns: 1;
+    }
+
+    .masonry-item {
+      break-inside: avoid;
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: var(--white);
+      display: inline-block;
+      width: 100%;
+      position: relative;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.2);
+      }
+
+      .media-wrapper {
+        position: relative;
+        width: 100%;
+        
+        img {
+          width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 12px;
+          object-fit: cover;
+
+          &.clickable-image {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+
+            &:hover {
+              transform: scale(1.05);
+            }
+          }
+        }
+
+        video {
+          width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 12px;
+          max-height: 400px;
+          object-fit: contain;
+        }
+        
+        .btn-delete-media {
+          position: absolute;
+          top: 0.75rem;
+          right: 0.75rem;
+          width: 36px;
+          height: 36px;
+          background: rgba(255, 255, 255, 0.95);
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          color: #ff6b6b;
+          z-index: 2;
+
+          &:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: scale(1.1);
+          }
+
+          i {
+            font-size: 1rem;
+          }
+        }
+      }
+
+      &.video {
+        column-span: all;
+        
+        @media (min-width: 769px) {
+          column-span: none;
+        }
+      }
+    }
+  }
+  
+  .post-edit-inline {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 2px solid var(--primary-orange);
+    
+    .form-group {
+      margin-bottom: 1rem;
+      
+      .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+    }
+    
+    .inline-edit-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+  }
+  
+  .other-files-list {
+    margin-top: 1rem;
+    
+    .files-label {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-orange);
+      }
+    }
+    
+    .file-item-wrapper {
+      padding: 0.75rem;
+      background: rgba(255, 107, 107, 0.05);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      
+      .file-item-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+      }
+      
+      .file-actions {
+        display: flex;
+        gap: 0.5rem;
+        
+        .btn-delete-file {
+          padding: 0.5rem 0.75rem;
+          background: rgba(255, 107, 107, 0.1);
+          border: 1px solid rgba(255, 107, 107, 0.3);
+          border-radius: 6px;
+          color: #ff6b6b;
+          cursor: pointer;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #ff6b6b;
+            color: white;
+          }
+        }
+      }
+    }
+  }
 
   .section-files {
     margin-top: 1rem;
@@ -1416,6 +1598,24 @@
       i {
         color: var(--primary-orange);
       }
+    }
+  }
+
+  .pptx-viewer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    background: #333;
+    
+    .viewer-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      min-width: 100%;
     }
   }
 

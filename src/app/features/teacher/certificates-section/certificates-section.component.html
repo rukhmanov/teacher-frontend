@@ -81,10 +81,6 @@
                 <span>{{ getFileName(certificate.fileUrl) }}</span>
               </div>
               <div class="file-actions">
-                <a [href]="getDownloadUrl(certificate.fileUrl)" [download]="getFileName(certificate.fileUrl)"
-                  class="btn-download" title="Скачать">
-                  <i class="fas fa-download"></i>
-                </a>
                 <button *ngIf="canViewInBrowser(certificate.fileUrl)" class="btn-view"
                   (click)="openViewerModal(certificate)" title="Просмотреть">
                   <i class="fas fa-eye"></i>
