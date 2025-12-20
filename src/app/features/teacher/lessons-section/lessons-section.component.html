@@ -1,0 +1,267 @@
+<div class="lessons-section">
+  <div *ngIf="isEditMode" class="section-actions">
+    <button class="btn-create" (click)="editingLessonId ? cancelEdit() : (showForm = !showForm)">
+      <i class="fas" [class.fa-chalkboard-teacher]="!editingLessonId" [class.fa-times]="editingLessonId"></i>
+      <span>{{ showForm && !editingLessonId ? 'Отменить' : editingLessonId ? 'Отменить редактирование' : 'Добавить занятие' }}</span>
+    </button>
+  </div>
+
+  <form *ngIf="showForm && isEditMode" class="section-form card" (ngSubmit)="createLesson()">
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-control" [(ngModel)]="newLesson.title" name="title" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Содержание</label>
+      <textarea class="form-control" [(ngModel)]="newLesson.content" name="content" rows="10"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        <i class="fas fa-file"></i> Файлы
+      </label>
+      <input type="file" class="form-control" (change)="onFileSelect($event)"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.mp4,.webm,.ogg,.mov,.avi" #fileInput multiple />
+      <small class="form-hint">Можно выбрать несколько файлов: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, изображения,
+        видео (макс. 50 MB)</small>
+
+      <!-- Выбранные файлы для загрузки -->
+      <div *ngIf="selectedFiles.length > 0" class="selected-files-list">
+        <p class="selected-files-title">Файлы для загрузки:</p>
+        <div *ngFor="let file of selectedFiles; let i = index" class="file-item">
+          <i class="fas fa-file"></i>
+          <span>{{ file.name }} ({{ (file.size / 1024).toFixed(2) }} KB)</span>
+          <button type="button" class="btn-remove-file" (click)="removeSelectedFile(i)" title="Удалить">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Уже загруженные файлы -->
+      <div *ngIf="newLesson.files && newLesson.files.length > 0" class="uploaded-files-list">
+        <p class="uploaded-files-title">Загруженные файлы:</p>
+        <div *ngFor="let fileUrl of newLesson.files" class="file-item">
+          <i class="fas fa-file"></i>
+          <a [href]="fileUrl" target="_blank" class="file-link">{{ getFileName(fileUrl) }}</a>
+          <button type="button" class="btn-remove-file" (click)="removeFile(fileUrl)" title="Удалить">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        <i class="fas fa-palette"></i> Цвет карточки
+      </label>
+      <div class="color-input-wrapper">
+        <input type="color" class="form-control color-input" [(ngModel)]="newLesson.cardColor" name="cardColor" />
+        <button *ngIf="newLesson.cardColor" type="button" class="btn-remove-color" (click)="removeCardColor()"
+          title="Удалить цвет">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <small class="form-hint">Выберите цвет фона карточки (необязательно)</small>
+    </div>
+    <button type="submit" class="btn btn-primary" [disabled]="isUploading">
+      <i class="fas fa-spinner fa-spin" *ngIf="isUploading"></i>
+      <i *ngIf="!isUploading" [class.fa-save]="editingLessonId" [class.fa-plus]="!editingLessonId"></i>
+      <span *ngIf="!isUploading">{{ editingLessonId ? 'Сохранить изменения' : 'Создать' }}</span>
+      <span *ngIf="isUploading">Загрузка...</span>
+    </button>
+  </form>
+
+  <div class="sections-list">
+    <div *ngFor="let lesson of lessons" class="section-card card"
+      [style.background-color]="lesson.cardColor || null">
+      <h3>{{ lesson.title }}</h3>
+      <div class="content" [class.expanded]="isCardExpanded(lesson.id!)" [innerHTML]="lesson.content"></div>
+      <div *ngIf="lesson.files && lesson.files.length > 0" class="section-files">
+        <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ lesson.files.length }}):</p>
+        <div class="files-list">
+          <div *ngFor="let file of lesson.files" class="file-item-wrapper">
+            <div class="file-item-content">
+              <div class="file-link">
+                <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                <span>{{ getFileName(file) }}</span>
+              </div>
+              <div class="file-actions">
+                <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn-download" title="Скачать">
+                  <i class="fas fa-download"></i>
+                </a>
+                <button *ngIf="canViewInBrowser(file)" class="btn-view" (click)="openViewerModal(file)"
+                  title="Просмотреть">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <!-- Превью для Word документов -->
+            <div *ngIf="isDocxFile(file)" class="docx-preview">
+              <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Загрузка превью...</span>
+              </div>
+              <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                <i class="fas fa-file-word"></i>
+                <p>{{ getDocxPreview(file) }}</p>
+              </div>
+            </div>
+            <!-- Превью для изображений -->
+            <div *ngIf="isImageFile(file)" class="image-preview">
+              <img [src]="getPreviewUrl(file)" [alt]="getFileName(file)" class="preview-image" />
+            </div>
+            <!-- Превью для видео -->
+            <div *ngIf="isVideoFile(file)" class="video-preview">
+              <video [src]="getPreviewUrl(file)" class="preview-video" controls></video>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button *ngIf="shouldShowExpandButton(lesson)" class="btn-expand" (click)="toggleCardExpansion(lesson.id!)">
+          <i class="fas" [class.fa-chevron-down]="!isCardExpanded(lesson.id!)"
+            [class.fa-chevron-up]="isCardExpanded(lesson.id!)"></i>
+          {{ isCardExpanded(lesson.id!) ? 'Свернуть' : 'Смотреть все' }}
+        </button>
+        <div *ngIf="isEditMode" class="section-actions-buttons">
+          <button class="btn btn-primary" (click)="editLesson(lesson)">
+            <i class="fas fa-edit"></i> <span>Редактировать</span>
+          </button>
+          <button class="btn btn-secondary" (click)="deleteLesson(lesson.id)">
+            <i class="fas fa-trash"></i> <span>Удалить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Индикатор загрузки при подгрузке -->
+    <div *ngIf="isLoading && lessons.length > 0" class="loading-indicator">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Загрузка занятий...</span>
+    </div>
+
+    <!-- Сообщение, если больше нет занятий -->
+    <div *ngIf="!hasMore && lessons.length > 0 && !isLoading" class="no-more-items">
+      <p>Все занятия загружены</p>
+    </div>
+
+    <div *ngIf="lessons.length === 0 && !isLoading" class="no-items">
+      <div class="empty-state">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <h3>Раздел занятий пуст</h3>
+        <p *ngIf="isEditMode">Добавьте информацию о занятиях!</p>
+        <p *ngIf="!isEditMode">Здесь будет информация о занятиях</p>
+        <button *ngIf="isEditMode" class="btn btn-primary" (click)="showForm = true">
+          <i class="fas fa-plus"></i> Добавить занятие
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для полного просмотра -->
+  <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()" *ngIf="selectedLesson">
+      <div class="modal-header">
+        <button class="modal-close" (click)="closeModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2>{{ selectedLesson.title }}</h2>
+      </div>
+      <div class="modal-body">
+        <div class="modal-text" [innerHTML]="selectedLesson.content"></div>
+        <div *ngIf="selectedLesson.files && selectedLesson.files.length > 0" class="modal-files">
+          <h4><i class="fas fa-paperclip"></i> Файлы ({{ selectedLesson.files.length }}):</h4>
+          <div class="files-list">
+            <div *ngFor="let file of selectedLesson.files" class="file-item-wrapper">
+              <div class="file-item-content">
+                <div class="file-link">
+                  <i class="fas" [ngClass]="getFileIcon(file)"></i>
+                  <span>{{ getFileName(file) }}</span>
+                </div>
+                <div class="file-actions">
+                  <a [href]="getDownloadUrl(file)" [download]="getFileName(file)" class="btn btn-primary btn-download"
+                    title="Скачать">
+                    <i class="fas fa-download"></i> Скачать
+                  </a>
+                  <button *ngIf="canViewInBrowser(file)" class="btn btn-primary btn-view"
+                    (click)="openViewerModal(file)" title="Просмотреть">
+                    <i class="fas fa-eye"></i> Просмотреть
+                  </button>
+                </div>
+              </div>
+              <!-- Превью для Word документов -->
+              <div *ngIf="isDocxFile(file)" class="docx-preview">
+                <div *ngIf="isLoadingPreview(file)" class="preview-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Загрузка превью...</span>
+                </div>
+                <div *ngIf="getDocxPreview(file) && !isLoadingPreview(file)" class="preview-text">
+                  <i class="fas fa-file-word"></i>
+                  <p>{{ getDocxPreview(file) }}</p>
+                </div>
+              </div>
+              <!-- Превью для изображений -->
+              <div *ngIf="isImageFile(file)" class="image-preview">
+                <img [src]="getPreviewUrl(file)" [alt]="getFileName(file)" class="preview-image" />
+              </div>
+              <!-- Превью для видео -->
+              <div *ngIf="isVideoFile(file)" class="video-preview">
+                <video [src]="getPreviewUrl(file)" class="preview-video" controls></video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для просмотра файлов -->
+  <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerFile">
+      <div class="viewer-modal-header">
+        <h2>{{ viewerFileName }}</h2>
+        <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="viewer-modal-body">
+        <!-- Для изображений используем img -->
+        <img *ngIf="isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" [alt]="viewerFileName"
+          class="viewer-image" />
+        <!-- Для видео используем video -->
+        <video *ngIf="isVideoFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" class="viewer-video" controls></video>
+        <!-- Для PDF используем embed для просмотра -->
+        <div *ngIf="isPdfFile(viewerFile)" class="pdf-viewer-container">
+          <div *ngIf="isLoadingPdf" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка PDF...</p>
+          </div>
+          <embed *ngIf="viewerPdfUrl && !isLoadingPdf" [src]="viewerPdfUrl!" type="application/pdf"
+            class="viewer-iframe" (error)="onViewerError()" />
+        </div>
+        <!-- Для Word документов (.docx) показываем конвертированный HTML -->
+        <div *ngIf="isDocxFile(viewerFile)" class="viewer-docx">
+          <div *ngIf="isLoadingDocx" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка документа...</p>
+          </div>
+          <div *ngIf="viewerDocxHtml && !isLoadingDocx" class="docx-content" [innerHTML]="viewerDocxHtml"></div>
+          <div *ngIf="viewerError && !isLoadingDocx" class="viewer-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Не удалось загрузить документ. Попробуйте скачать файл.</p>
+            <a [href]="getDownloadUrl(viewerFile)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
+              <i class="fas fa-download"></i> Скачать файл
+            </a>
+          </div>
+        </div>
+        <!-- Для файлов, которые нельзя просмотреть -->
+        <div *ngIf="!getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !isPdfFile(viewerFile) && !isVideoFile(viewerFile) && !viewerError" class="viewer-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Предварительный просмотр недоступен для этого типа файла.</p>
+          <a [href]="getDownloadUrl(viewerFile)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
+            <i class="fas fa-download"></i> Скачать файл
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -75,6 +75,7 @@ export interface Publication {
   title: string;
   description?: string;
   fileUrl: string;
+  files?: string[];
   previewImage?: string;
   cardColor?: string;
   coverImage?: string;
@@ -84,6 +85,18 @@ export interface Publication {
 }
 
 export interface ParentSection {
+  id: string;
+  teacherId: string;
+  title: string;
+  content?: string;
+  files?: string[];
+  cardColor?: string;
+  coverImage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Lesson {
   id: string;
   teacherId: string;
   title: string;
@@ -160,6 +173,7 @@ export interface CreateReviewRequest {
   content: string;
   rating: number;
 }
+
 
 
 

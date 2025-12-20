@@ -9,6 +9,7 @@ import {
   Presentation,
   Publication,
   ParentSection,
+  Lesson,
   LifeInDOU,
   SocialLink,
   Review,
@@ -340,6 +341,58 @@ export class TeachersService {
 
   deleteParentSection(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/teachers/me/parents/${id}`);
+  }
+
+  // Lessons
+  getLessons(
+    usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
+  ): Observable<Lesson[]> {
+    let url = '';
+    if (usernameOrTeacherId) {
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/lessons`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/lessons`;
+    }
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Lesson[]>(url, { params });
+  }
+
+  getOwnLessons(skip?: number, take?: number): Observable<Lesson[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Lesson[]>(
+      `${this.apiUrl}/teachers/me/lessons`,
+      { params },
+    );
+  }
+
+  createLesson(data: Partial<Lesson>): Observable<Lesson> {
+    return this.http.post<Lesson>(
+      `${this.apiUrl}/teachers/me/lessons`,
+      data,
+    );
+  }
+
+  updateLesson(
+    id: string,
+    data: Partial<Lesson>,
+  ): Observable<Lesson> {
+    return this.http.put<Lesson>(
+      `${this.apiUrl}/teachers/me/lessons/${id}`,
+      data,
+    );
+  }
+
+  deleteLesson(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/teachers/me/lessons/${id}`);
   }
 
   // Life in DOU

@@ -42,6 +42,13 @@ export const routes: Routes = [
           ).then((m) => m.PublicationsSectionComponent),
       },
       {
+        path: 'lessons',
+        loadComponent: () =>
+          import(
+            './features/teacher/lessons-section/lessons-section.component'
+          ).then((m) => m.LessonsSectionComponent),
+      },
+      {
         path: 'certificates',
         loadComponent: () =>
           import(
@@ -126,6 +133,13 @@ export const routes: Routes = [
           import(
             './features/teacher/publications-section/publications-section.component'
           ).then((m) => m.PublicationsSectionComponent),
+      },
+      {
+        path: 'lessons',
+        loadComponent: () =>
+          import(
+            './features/teacher/lessons-section/lessons-section.component'
+          ).then((m) => m.LessonsSectionComponent),
       },
       {
         path: 'certificates',

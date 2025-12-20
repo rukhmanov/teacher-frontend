@@ -67,18 +67,54 @@
   <div class="certificates-list">
     <div *ngFor="let certificate of certificates" class="certificate-card card"
       [style.background-color]="certificate.cardColor || null">
-      <!-- Превью -->
-      <div *ngIf="getPreviewUrl(certificate.fileUrl) || certificate.previewImage || certificate.coverImage"
-        class="certificate-preview">
-        <img *ngIf="certificate.previewImage || certificate.coverImage"
-          [src]="certificate.previewImage || certificate.coverImage" [alt]="certificate.title" class="preview-image" />
-        <iframe *ngIf="getPreviewUrl(certificate.fileUrl) && !certificate.previewImage && !certificate.coverImage"
-          [src]="getPreviewUrl(certificate.fileUrl)!" class="preview-iframe" frameborder="0" allowfullscreen></iframe>
-      </div>
       <h3>{{ certificate.title }}</h3>
-      <p *ngIf="certificate.description" [class.expanded]="isCardExpanded(certificate.id!)" class="description-text">
+      <div *ngIf="certificate.description" class="content" [class.expanded]="isCardExpanded(certificate.id!)">
         {{ certificate.description }}
-      </p>
+      </div>
+      <div *ngIf="certificate.fileUrl" class="section-files">
+        <p class="files-label"><i class="fas fa-paperclip"></i> Файл:</p>
+        <div class="files-list">
+          <div class="file-item-wrapper">
+            <div class="file-item-content">
+              <div class="file-link">
+                <i class="fas" [ngClass]="getFileIcon(certificate.fileUrl)"></i>
+                <span>{{ getFileName(certificate.fileUrl) }}</span>
+              </div>
+              <div class="file-actions">
+                <a [href]="getDownloadUrl(certificate.fileUrl)" [download]="getFileName(certificate.fileUrl)"
+                  class="btn-download" title="Скачать">
+                  <i class="fas fa-download"></i>
+                </a>
+                <button *ngIf="canViewInBrowser(certificate.fileUrl)" class="btn-view"
+                  (click)="openViewerModal(certificate)" title="Просмотреть">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <!-- Превью для Word документов -->
+            <div *ngIf="isDocxFile(certificate.fileUrl)" class="docx-preview">
+              <div *ngIf="isLoadingPreview(certificate.fileUrl)" class="preview-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Загрузка превью...</span>
+              </div>
+              <div *ngIf="getDocxPreview(certificate.fileUrl) && !isLoadingPreview(certificate.fileUrl)"
+                class="preview-text">
+                <i class="fas fa-file-word"></i>
+                <p>{{ getDocxPreview(certificate.fileUrl) }}</p>
+              </div>
+            </div>
+            <!-- Превью для изображений -->
+            <div *ngIf="isImageFile(certificate.fileUrl)" class="image-preview">
+              <img [src]="getPreviewUrl(certificate.fileUrl)" [alt]="getFileName(certificate.fileUrl)"
+                class="preview-image" />
+            </div>
+            <!-- Превью для видео -->
+            <div *ngIf="isVideoFile(certificate.fileUrl)" class="video-preview">
+              <video [src]="getPreviewUrl(certificate.fileUrl)" class="preview-video" controls></video>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="card-footer">
         <button *ngIf="shouldShowExpandButton(certificate)" class="btn-expand"
           (click)="toggleCardExpansion(certificate.id!)">
@@ -87,13 +123,6 @@
           {{ isCardExpanded(certificate.id!) ? 'Свернуть' : 'Смотреть все' }}
         </button>
         <div class="certificate-actions">
-          <button *ngIf="canViewInBrowser(certificate.fileUrl)" class="btn btn-primary"
-            (click)="openViewerModal(certificate)" title="Просмотреть в браузере">
-            <i class="fas fa-eye"></i> <span>Просмотреть</span>
-          </button>
-          <a [href]="certificate.fileUrl" target="_blank" class="btn btn-primary">
-            <i class="fas fa-download"></i> <span>Скачать</span>
-          </a>
           <button *ngIf="isEditMode" class="btn btn-primary" (click)="editCertificate(certificate)">
             <i class="fas fa-edit"></i> <span>Редактировать</span>
           </button>
@@ -157,25 +186,47 @@
 
   <!-- Модальное окно для просмотра в браузере -->
   <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
-    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerCertificate">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerFile">
       <div class="viewer-modal-header">
-        <h2>{{ viewerCertificate.title }}</h2>
+        <h2>{{ viewerFileName }}</h2>
         <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="viewer-modal-body">
         <!-- Для изображений используем img -->
-        <img *ngIf="getViewerUrl(viewerCertificate.fileUrl) && isImageFile(viewerCertificate.fileUrl)"
-          [src]="viewerCertificate.fileUrl" [alt]="viewerCertificate.title" class="viewer-image" />
-        <!-- Для других файлов используем iframe -->
-        <iframe *ngIf="getViewerUrl(viewerCertificate.fileUrl) && !isImageFile(viewerCertificate.fileUrl)"
-          [src]="getViewerUrl(viewerCertificate.fileUrl)!" class="viewer-iframe" frameborder="0"
-          allowfullscreen></iframe>
-        <div *ngIf="!getViewerUrl(viewerCertificate.fileUrl)" class="viewer-error">
+        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
+          [alt]="viewerFileName" class="viewer-image" />
+        <!-- Для видео используем video -->
+        <video *ngIf="getViewerUrl(viewerFile) && isVideoFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
+          class="viewer-video" controls></video>
+        <!-- Для PDF используем embed для просмотра -->
+        <div *ngIf="isPdfFile(viewerFile)" class="pdf-viewer-container">
+          <embed [src]="getViewerUrl(viewerFile)!" type="application/pdf" class="viewer-iframe"
+            (error)="viewerError = true" />
+        </div>
+        <!-- Для Word документов (.docx) показываем конвертированный HTML -->
+        <div *ngIf="isDocxFile(viewerFile)" class="viewer-docx">
+          <div *ngIf="isLoadingDocx" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка документа...</p>
+          </div>
+          <div *ngIf="viewerDocxHtml && !isLoadingDocx" class="docx-content" [innerHTML]="viewerDocxHtml"></div>
+          <div *ngIf="viewerError && !isLoadingDocx" class="viewer-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Не удалось загрузить документ. Попробуйте скачать файл.</p>
+            <a [href]="getDownloadUrl(viewerFile)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
+              <i class="fas fa-download"></i> Скачать файл
+            </a>
+          </div>
+        </div>
+        <!-- Для файлов, которые нельзя просмотреть -->
+        <div
+          *ngIf="!getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !isPdfFile(viewerFile) && !isVideoFile(viewerFile) && !viewerError"
+          class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
-          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
-          <a [href]="viewerCertificate.fileUrl" target="_blank" class="btn btn-primary">
+          <p>Предварительный просмотр недоступен для этого типа файла.</p>
+          <a [href]="getDownloadUrl(viewerFile)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
             <i class="fas fa-download"></i> Скачать файл
           </a>
         </div>

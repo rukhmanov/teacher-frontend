@@ -103,12 +103,87 @@
             <div *ngIf="post.images && post.images.length > 3" class="images-more">
               <p>+{{ post.images.length - 3 }} изображений</p>
             </div>
-            <!-- Превью файла (только для изображений и видео) -->
-            <div *ngIf="post.fileUrl && getPreviewUrl(post.fileUrl)" class="post-file-preview">
-              <img *ngIf="isImageFile(post.fileUrl)" [src]="getSafeUrl(post.fileUrl)" alt="File preview"
-                class="preview-image clickable-image" (click)="openImageCarousel([post.fileUrl], 0)" />
-              <video *ngIf="isVideoFile(post.fileUrl)" [src]="getSafeUrl(post.fileUrl)" controls
-                class="preview-video"></video>
+          </div>
+          <!-- Файлы: fileUrl или files -->
+          <div *ngIf="post.fileUrl || (post.files && post.files.length > 0)" class="section-files">
+            <p class="files-label"><i class="fas fa-paperclip"></i> Файлы ({{ (post.fileUrl ? 1 : 0) + (post.files?.length || 0) }}):</p>
+            <div class="files-list">
+              <!-- fileUrl -->
+              <div *ngIf="post.fileUrl" class="file-item-wrapper">
+                <div class="file-item-content">
+                  <div class="file-link">
+                    <i class="fas" [ngClass]="getFileIcon(post.fileUrl!)"></i>
+                    <span>{{ getFileName(post.fileUrl!) }}</span>
+                  </div>
+                  <div class="file-actions">
+                    <a [href]="getDownloadUrl(post.fileUrl!)" [download]="getFileName(post.fileUrl!)" class="btn-download" title="Скачать">
+                      <i class="fas fa-download"></i>
+                    </a>
+                    <button *ngIf="canViewInBrowser(post.fileUrl!)" class="btn-view" (click)="openViewerModalForFile(post.fileUrl!)"
+                      title="Просмотреть">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <!-- Превью для Word документов -->
+                <div *ngIf="isDocxFile(post.fileUrl!)" class="docx-preview">
+                  <div *ngIf="isLoadingPreview(post.fileUrl!)" class="preview-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Загрузка превью...</span>
+                  </div>
+                  <div *ngIf="getDocxPreview(post.fileUrl!) && !isLoadingPreview(post.fileUrl!)" class="preview-text">
+                    <i class="fas fa-file-word"></i>
+                    <p>{{ getDocxPreview(post.fileUrl!) }}</p>
+                  </div>
+                </div>
+                <!-- Превью для изображений -->
+                <div *ngIf="isImageFile(post.fileUrl!)" class="image-preview">
+                  <img [src]="getPreviewUrl(post.fileUrl!)" [alt]="getFileName(post.fileUrl!)" class="preview-image" />
+                </div>
+                <!-- Превью для видео -->
+                <div *ngIf="isVideoFile(post.fileUrl!)" class="video-preview">
+                  <video [src]="getPreviewUrl(post.fileUrl!)" class="preview-video" controls></video>
+                </div>
+              </div>
+              <!-- files (массив) -->
+              <ng-container *ngFor="let file of post.files">
+                <div *ngIf="file" class="file-item-wrapper">
+                <div class="file-item-content">
+                  <div class="file-link">
+                    <i class="fas" [ngClass]="getFileIcon(file!)"></i>
+                    <span>{{ getFileName(file!) }}</span>
+                  </div>
+                  <div class="file-actions">
+                    <a [href]="getDownloadUrl(file!)" [download]="getFileName(file!)" class="btn-download" title="Скачать">
+                      <i class="fas fa-download"></i>
+                    </a>
+                    <button *ngIf="canViewInBrowser(file!)" class="btn-view" (click)="openViewerModalForFile(file!)"
+                      title="Просмотреть">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <!-- Превью для Word документов -->
+                <div *ngIf="isDocxFile(file!)" class="docx-preview">
+                  <div *ngIf="isLoadingPreview(file!)" class="preview-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Загрузка превью...</span>
+                  </div>
+                  <div *ngIf="getDocxPreview(file!) && !isLoadingPreview(file!)" class="preview-text">
+                    <i class="fas fa-file-word"></i>
+                    <p>{{ getDocxPreview(file!) }}</p>
+                  </div>
+                </div>
+                <!-- Превью для изображений -->
+                <div *ngIf="isImageFile(file!)" class="image-preview">
+                  <img [src]="getPreviewUrl(file!)" [alt]="getFileName(file!)" class="preview-image" />
+                </div>
+                <!-- Превью для видео -->
+                <div *ngIf="isVideoFile(file!)" class="video-preview">
+                  <video [src]="getPreviewUrl(file!)" class="preview-video" controls></video>
+                </div>
+                </div>
+              </ng-container>
             </div>
           </div>
           <div class="post-footer">
@@ -117,19 +192,7 @@
                 [class.fa-chevron-up]="isCardExpanded(post.id!)"></i>
               {{ isCardExpanded(post.id!) ? 'Свернуть' : 'Смотреть все' }}
             </button>
-            <button *ngIf="shouldShowFullButton(post) && !shouldShowExpandButton(post)" class="btn-expand"
-              (click)="openPostModal(post)">
-              <i class="fas fa-eye"></i>
-              <span>Показать все</span>
-            </button>
             <div class="post-actions">
-              <button *ngIf="post.fileUrl && canViewInBrowser(post.fileUrl)" class="btn btn-primary"
-                (click)="openViewerModal(post)" title="Просмотреть в браузере">
-                <i class="fas fa-eye"></i> <span>Просмотреть</span>
-              </button>
-              <a *ngIf="post.fileUrl" [href]="post.fileUrl" target="_blank" class="btn btn-primary">
-                <i class="fas fa-download"></i> <span>Скачать</span>
-              </a>
               <button *ngIf="isEditMode" class="btn btn-primary" (click)="editPost(post)">
                 <i class="fas fa-edit"></i> <span>Редактировать</span>
               </button>
@@ -187,19 +250,19 @@
             alt="Post image" (error)="onImageError($event, 'post')"
             (click)="openImageCarousel(selectedPost.images || [], i)" class="clickable-image" />
         </div>
-        <div *ngIf="selectedPost.fileUrl && getPreviewUrl(selectedPost.fileUrl)" class="modal-file-preview">
-          <img *ngIf="isImageFile(selectedPost.fileUrl)" [src]="getSafeUrl(selectedPost.fileUrl)" alt="File preview"
-            class="clickable-image" (click)="openImageCarousel([selectedPost.fileUrl], 0)" />
-          <video *ngIf="isVideoFile(selectedPost.fileUrl)" [src]="getSafeUrl(selectedPost.fileUrl)" controls
+        <div *ngIf="selectedPost.fileUrl && getPreviewUrl(selectedPost.fileUrl!)" class="modal-file-preview">
+          <img *ngIf="isImageFile(selectedPost.fileUrl!)" [src]="getSafeUrl(selectedPost.fileUrl!)" alt="File preview"
+            class="clickable-image" (click)="openImageCarousel([selectedPost.fileUrl!], 0)" />
+          <video *ngIf="isVideoFile(selectedPost.fileUrl!)" [src]="getSafeUrl(selectedPost.fileUrl!)" controls
             class="preview-video"></video>
         </div>
         <p class="modal-text">{{ selectedPost.content }}</p>
         <div class="modal-actions" *ngIf="selectedPost.fileUrl">
-          <button *ngIf="canViewInBrowser(selectedPost.fileUrl)" class="btn btn-primary"
+          <button *ngIf="canViewInBrowser(selectedPost.fileUrl!)" class="btn btn-primary"
             (click)="openViewerModal(selectedPost)">
             <i class="fas fa-eye"></i> Просмотреть в браузере
           </button>
-          <a [href]="selectedPost.fileUrl" target="_blank" class="btn btn-primary">
+          <a [href]="selectedPost.fileUrl!" target="_blank" class="btn btn-primary">
             <i class="fas fa-download"></i> Скачать файл
           </a>
         </div>
@@ -209,33 +272,45 @@
 
   <!-- Модальное окно для просмотра файла в браузере -->
   <div *ngIf="showViewerModal" class="viewer-modal-overlay" (click)="closeViewerModal()">
-    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerPost">
+    <div class="viewer-modal-content" (click)="$event.stopPropagation()" *ngIf="viewerFile">
       <div class="viewer-modal-header">
-        <h2>{{ viewerPost.title }}</h2>
-        <div class="viewer-header-actions">
-          <a [href]="viewerPost.fileUrl" target="_blank" download class="btn-download" title="Скачать файл">
-            <i class="fas fa-download"></i>
-          </a>
-          <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+        <h2>{{ viewerFileName }}</h2>
+        <button class="viewer-modal-close" (click)="closeViewerModal()" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       <div class="viewer-modal-body">
         <!-- Для изображений используем img -->
-        <img *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && isImageFile(viewerPost.fileUrl)"
-          [src]="viewerPost.fileUrl" [alt]="viewerPost.title" class="viewer-image" />
+        <img *ngIf="getViewerUrl(viewerFile) && isImageFile(viewerFile)" [src]="getViewerUrl(viewerFile)!" [alt]="viewerFileName"
+          class="viewer-image" />
         <!-- Для видео используем video -->
-        <video *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && isVideoFile(viewerPost.fileUrl)"
-          [src]="viewerPost.fileUrl" class="viewer-video" controls></video>
-        <!-- Для других файлов используем iframe -->
-        <iframe
-          *ngIf="viewerPost.fileUrl && getViewerUrl(viewerPost.fileUrl) && !isImageFile(viewerPost.fileUrl) && !isVideoFile(viewerPost.fileUrl)"
-          [src]="getViewerUrl(viewerPost.fileUrl)!" class="viewer-iframe" frameborder="0" allowfullscreen></iframe>
-        <div *ngIf="viewerPost.fileUrl && !getViewerUrl(viewerPost.fileUrl)" class="viewer-error">
+        <video *ngIf="getViewerUrl(viewerFile) && isVideoFile(viewerFile)" [src]="getViewerUrl(viewerFile)!"
+          class="viewer-video" controls></video>
+        <!-- Для PDF используем embed для просмотра -->
+        <div *ngIf="isPdfFile(viewerFile)" class="pdf-viewer-container">
+          <embed [src]="getViewerUrl(viewerFile)!" type="application/pdf"
+            class="viewer-iframe" (error)="viewerError = true" />
+        </div>
+        <!-- Для Word документов (.docx) показываем конвертированный HTML -->
+        <div *ngIf="isDocxFile(viewerFile)" class="viewer-docx">
+          <div *ngIf="isLoadingDocx" class="viewer-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Загрузка документа...</p>
+          </div>
+          <div *ngIf="viewerDocxHtml && !isLoadingDocx" class="docx-content" [innerHTML]="viewerDocxHtml"></div>
+          <div *ngIf="viewerError && !isLoadingDocx" class="viewer-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Не удалось загрузить документ. Попробуйте скачать файл.</p>
+            <a [href]="getDownloadUrl(viewerFile!)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
+              <i class="fas fa-download"></i> Скачать файл
+            </a>
+          </div>
+        </div>
+        <!-- Для файлов, которые нельзя просмотреть -->
+        <div *ngIf="viewerFile && !getViewerUrl(viewerFile) && !isDocxFile(viewerFile) && !isPdfFile(viewerFile) && !isVideoFile(viewerFile) && !viewerError" class="viewer-error">
           <i class="fas fa-exclamation-triangle"></i>
-          <p>Не удалось загрузить просмотр. Попробуйте скачать файл.</p>
-          <a [href]="viewerPost.fileUrl" target="_blank" download class="btn btn-primary">
+          <p>Предварительный просмотр недоступен для этого типа файла.</p>
+          <a [href]="getDownloadUrl(viewerFile!)" target="_blank" class="btn btn-primary" [download]="viewerFileName">
             <i class="fas fa-download"></i> Скачать файл
           </a>
         </div>

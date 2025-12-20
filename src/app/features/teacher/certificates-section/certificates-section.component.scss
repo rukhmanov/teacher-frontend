@@ -361,33 +361,6 @@
     }
   }
 
-  .certificate-preview {
-    width: 100%;
-    height: 250px;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-    background: var(--bg-cream);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-shrink: 0;
-
-    .preview-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .preview-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-  }
 
   h3 {
     margin-bottom: 1rem;
@@ -396,20 +369,232 @@
     flex-shrink: 0;
   }
 
-  .description-text {
-    color: var(--text-brown);
-    margin-bottom: 1rem;
+  .content {
     flex: 1;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
-    line-height: 1.6;
+    line-height: 1.8;
+    color: var(--text-dark);
     transition: all 0.3s ease;
 
     &.expanded {
       -webkit-line-clamp: unset;
       display: block;
+    }
+  }
+
+  .section-files {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 107, 107, 0.1);
+    flex-shrink: 0;
+
+    .files-label {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-orange);
+      }
+    }
+
+    .files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .file-item-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: rgba(255, 107, 107, 0.05);
+        border-radius: 8px;
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(255, 107, 107, 0.1);
+          border-color: rgba(255, 107, 107, 0.2);
+        }
+
+        .file-item-content {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          width: 100%;
+        }
+
+        .file-link {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex: 1;
+          color: var(--text-dark);
+          cursor: default;
+
+          i {
+            color: var(--primary-orange);
+            flex-shrink: 0;
+            font-size: 1.1rem;
+          }
+
+          span {
+            flex: 1;
+            word-break: break-all;
+          }
+        }
+
+        .file-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-shrink: 0;
+
+          .btn-download {
+            padding: 0.5rem 0.75rem;
+            background: var(--primary-orange);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+
+            &:hover {
+              background: #ff6b6b;
+              transform: translateY(-2px);
+            }
+
+            i {
+              font-size: 0.9rem;
+            }
+          }
+
+          .btn-view {
+            padding: 0.5rem 0.75rem;
+            background: var(--primary-orange);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+
+            &:hover {
+              background: #ff6b6b;
+              transform: scale(1.05);
+            }
+
+            i {
+              font-size: 0.9rem;
+            }
+          }
+        }
+
+        .docx-preview {
+          width: 100%;
+          margin-top: 0.5rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: 6px;
+          border-left: 3px solid #2b579a;
+          font-size: 0.9rem;
+          line-height: 1.5;
+
+          .preview-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-brown);
+            font-size: 0.85rem;
+
+            i {
+              color: var(--primary-orange);
+            }
+          }
+
+          .preview-text {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+
+            i {
+              color: #2b579a;
+              font-size: 1.2rem;
+              flex-shrink: 0;
+              margin-top: 0.2rem;
+            }
+
+            p {
+              margin: 0;
+              color: var(--text-dark);
+              flex: 1;
+              display: -webkit-box;
+              -webkit-line-clamp: 6;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+          }
+        }
+
+        .image-preview {
+          width: 100%;
+          margin-top: 0.5rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: 6px;
+          border-left: 3px solid #28a745;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+            display: block;
+          }
+        }
+
+        .video-preview {
+          width: 100%;
+          margin-top: 0.5rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: 6px;
+          border-left: 3px solid var(--primary-orange);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100px;
+          max-height: 200px;
+          overflow: hidden;
+
+          .preview-video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+          }
+        }
+      }
     }
   }
 
@@ -786,6 +971,233 @@
 }
 
 @media (max-width: 768px) {
+// Модальное окно для просмотра файлов
+.viewer-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  animation: fadeIn 0.3s ease;
+  overflow: hidden;
+}
+
+.viewer-modal-content {
+  background: #1a1a1a;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+.viewer-modal-header {
+  padding: 1.5rem 2rem;
+  background: #2a2a2a;
+  border-bottom: 2px solid rgba(255, 107, 107, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+
+  h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+    flex: 1;
+    word-break: break-all;
+  }
+}
+
+.viewer-modal-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+  }
+}
+
+.viewer-modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #1a1a1a;
+
+  .pdf-viewer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    background: #333;
+
+    .viewer-loading {
+      color: white;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-orange);
+      }
+    }
+  }
+
+  .viewer-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  .viewer-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .viewer-video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .viewer-docx {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    padding: 2rem;
+    background: white;
+    color: #333;
+
+    .viewer-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 1rem;
+      color: white;
+
+      i {
+        font-size: 2rem;
+        color: var(--primary-orange);
+      }
+
+      p {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+    }
+
+    .docx-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: white;
+      line-height: 1.6;
+      font-family: 'Times New Roman', serif;
+      font-size: 12pt;
+
+      p {
+        margin: 0 0 1em 0;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        margin: 1.5em 0 1em 0;
+        font-weight: bold;
+      }
+
+      ul, ol {
+        margin: 1em 0;
+        padding-left: 2em;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+
+        td, th {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+
+        th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        margin: 1em 0;
+      }
+    }
+  }
+
+  .viewer-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    color: white;
+    text-align: center;
+
+    i {
+      font-size: 3rem;
+      color: var(--primary-orange);
+    }
+
+    p {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .btn {
+      margin-top: 1rem;
+    }
+  }
+}
+
   .certificate-card {
     .certificate-preview {
       height: 200px;

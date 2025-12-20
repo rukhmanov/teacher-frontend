@@ -2,14 +2,16 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl, SafeHtml } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UploadService } from '../../../core/services/upload.service';
+import { DocxViewerService } from '../../../core/services/docx-viewer.service';
 import { Post, TeacherProfile } from '../../../core/models/teacher.interface';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 import { ImageCarouselComponent } from '../../../shared/components/image-carousel/image-carousel.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-home-section',
@@ -51,7 +53,15 @@ export class HomeSectionComponent implements OnInit {
   showPostModal: boolean = false;
   selectedPost: Post | null = null;
   showViewerModal: boolean = false;
-  viewerPost: Post | null = null;
+  viewerFile: string | null = null;
+  viewerFileName: string = '';
+  viewerError: boolean = false;
+  viewerDocxHtml: SafeHtml | null = null;
+  isLoadingDocx: boolean = false;
+  
+  // Превью Word документов
+  docxPreviews: Map<string, string> = new Map();
+  loadingPreviews: Set<string> = new Set();
   
   // Развернутые карточки
   expandedCards: Set<string> = new Set();
@@ -68,6 +78,7 @@ export class HomeSectionComponent implements OnInit {
     private teachersService: TeachersService,
     private authService: AuthService,
     private uploadService: UploadService,
+    private docxViewerService: DocxViewerService,
     private sanitizer: DomSanitizer,
   ) {}
 
@@ -151,6 +162,9 @@ export class HomeSectionComponent implements OnInit {
         this.hasMore = posts.length === this.take;
         this.skip += posts.length;
         this.isLoading = false;
+        
+        // Загружаем превью для всех Word документов
+        this.loadPreviewsForPosts(posts);
       },
       error: () => {
         this.isLoading = false;
@@ -177,10 +191,33 @@ export class HomeSectionComponent implements OnInit {
         this.hasMore = posts.length === this.take;
         this.skip += posts.length;
         this.isLoading = false;
+        
+        // Загружаем превью для всех Word документов
+        this.loadPreviewsForPosts(posts);
       },
       error: () => {
         this.isLoading = false;
       },
+    });
+  }
+
+  /**
+   * Загружает превью для всех Word документов в постах
+   */
+  private loadPreviewsForPosts(posts: Post[]): void {
+    posts.forEach(post => {
+      // Загружаем превью для fileUrl
+      if (post.fileUrl && this.docxViewerService.isDocxFile(post.fileUrl)) {
+        this.loadDocxPreview(post.fileUrl);
+      }
+      // Загружаем превью для файлов в массиве files
+      if (post.files) {
+        post.files.forEach(file => {
+          if (this.docxViewerService.isDocxFile(file)) {
+            this.loadDocxPreview(file);
+          }
+        });
+      }
     });
   }
 
@@ -271,70 +308,189 @@ export class HomeSectionComponent implements OnInit {
            url.endsWith('.mov') || url.endsWith('.avi') || url.endsWith('.mkv');
   }
 
-  getPreviewUrl(fileUrl: string): SafeResourceUrl | null {
+  getFileName(fileUrl: string): string {
+    if (!fileUrl) return '';
+    const parts = fileUrl.split('/');
+    return parts[parts.length - 1] || fileUrl;
+  }
+
+  getFileIcon(fileUrl: string): string {
+    if (!fileUrl) return 'fa-file';
+    const url = fileUrl.toLowerCase();
+    if (url.endsWith('.pdf')) return 'fa-file-pdf';
+    if (url.endsWith('.doc') || url.endsWith('.docx')) return 'fa-file-word';
+    if (url.endsWith('.xls') || url.endsWith('.xlsx')) return 'fa-file-excel';
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') || url.endsWith('.gif')) return 'fa-file-image';
+    return 'fa-file';
+  }
+
+  isPdfFile(fileUrl: string): boolean {
+    if (!fileUrl) return false;
+    return fileUrl.toLowerCase().endsWith('.pdf');
+  }
+
+  isDocxFile(fileUrl: string): boolean {
+    return this.docxViewerService.isDocxFile(fileUrl);
+  }
+
+  /**
+   * Получает URL для просмотра файла в модальном окне.
+   * Для изображений и видео возвращает прямой URL.
+   * Для PDF и других файлов использует прокси.
+   */
+  getViewerUrl(fileUrl: string): SafeResourceUrl | null {
     if (!fileUrl) return null;
-    // Показываем превью только для изображений и видео
+
+    // Для изображений и видео возвращаем прокси URL, если путь относительный
     if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
-      return this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+      return this.sanitizer.bypassSecurityTrustResourceUrl(this.getPreviewUrl(fileUrl));
+    }
+    // Для PDF используем прокси URL для обхода проблем с CORS (без параметра download для просмотра)
+    else if (this.isPdfFile(fileUrl)) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(this.getProxyUrl(fileUrl));
     }
     return null;
   }
 
-  getViewerUrl(fileUrl: string): SafeResourceUrl | null {
-    if (!fileUrl) return null;
-    
-    const url = fileUrl.toLowerCase();
-    let viewerUrl: string | null = null;
-    
-    // Для изображений и видео возвращаем прямой URL
-    if (this.isImageFile(fileUrl) || this.isVideoFile(fileUrl)) {
-      viewerUrl = fileUrl;
+  /**
+   * Получает URL для превью файла (изображения, видео)
+   * Использует прокси для относительных путей, прямой URL для полных
+   */
+  getPreviewUrl(fileUrl: string): string {
+    if (!fileUrl) return '';
+    // Если это уже полный URL, возвращаем его
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      return fileUrl;
     }
-    // Для Word документов используем Office Online Viewer
-    else if (url.endsWith('.doc') || url.endsWith('.docx')) {
-      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+    // Иначе, используем прокси
+    return this.getProxyUrl(fileUrl);
+  }
+
+  /**
+   * Получает прокси URL для просмотра файла (без параметра download)
+   */
+  private getProxyUrl(fileUrl: string): string {
+    let relativePath = fileUrl;
+
+    try {
+      const url = new URL(fileUrl);
+      relativePath = url.pathname.substring(1);
+    } catch (e) {
+      // Если не удалось распарсить как URL, используем как есть
     }
-    // Для PPTX/PPT используем Office Online Viewer
-    else if (url.endsWith('.pptx') || url.endsWith('.ppt')) {
-      viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`;
+
+    // Используем прокси endpoint для просмотра (без download=true)
+    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}`;
+  }
+
+  /**
+   * Получает URL для скачивания файла (через прокси с параметром download=true)
+   */
+  getDownloadUrl(fileUrl: string): string {
+    let relativePath = fileUrl;
+
+    try {
+      const url = new URL(fileUrl);
+      relativePath = url.pathname.substring(1);
+    } catch (e) {
+      // Если не удалось распарсить как URL, используем как есть
     }
-    // Для PDF используем Google Docs Viewer
-    else if (url.endsWith('.pdf')) {
-      viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-    }
-    
-    return viewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl) : null;
+
+    // Используем прокси endpoint для скачивания с download=true
+    return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}&download=true`;
   }
 
   canViewInBrowser(fileUrl: string): boolean {
     if (!fileUrl) return false;
-    const url = fileUrl.toLowerCase();
-    // Поддерживаем изображения, видео, Word документы, PDF, PPTX/PPT
-    return this.isImageFile(fileUrl) || this.isVideoFile(fileUrl) ||
-           url.endsWith('.doc') || url.endsWith('.docx') || 
-           url.endsWith('.pdf') || 
-           url.endsWith('.pptx') || url.endsWith('.ppt');
+    // Поддерживаем изображения, видео, PDF и Word документы (.docx)
+    return this.isImageFile(fileUrl) ||
+           this.isVideoFile(fileUrl) ||
+           this.isPdfFile(fileUrl) ||
+           this.docxViewerService.isDocxFile(fileUrl);
   }
 
   openViewerModal(post: Post): void {
-    this.viewerPost = post;
+    // Используем fileUrl, если есть, иначе берем первый файл из files
+    const fileUrl = post.fileUrl || (post.files && post.files.length > 0 ? post.files[0] : null);
+    if (!fileUrl) return;
+    this.openViewerModalForFile(fileUrl);
+  }
+
+  openViewerModalForFile(fileUrl: string): void {
+    if (!fileUrl) return;
+    
+    this.viewerFile = fileUrl;
+    this.viewerFileName = this.getFileName(fileUrl);
+    this.viewerError = false;
+    this.viewerDocxHtml = null;
+    this.isLoadingDocx = false;
+
+    // Если это Word документ (.docx), загружаем и конвертируем его
+    if (this.docxViewerService.isDocxFile(fileUrl)) {
+      this.isLoadingDocx = true;
+      this.docxViewerService.convertDocxToHtml(fileUrl).subscribe({
+        next: (html) => {
+          this.viewerDocxHtml = this.sanitizer.bypassSecurityTrustHtml(html);
+          this.isLoadingDocx = false;
+        },
+        error: (error) => {
+          console.error('Ошибка при конвертации Word документа:', error);
+          this.viewerError = true;
+          this.isLoadingDocx = false;
+        },
+      });
+    }
+
     this.showViewerModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   closeViewerModal(): void {
     this.showViewerModal = false;
-    this.viewerPost = null;
+    this.viewerFile = null;
+    this.viewerFileName = '';
+    this.viewerError = false;
+    this.viewerDocxHtml = null;
+    this.isLoadingDocx = false;
     document.body.style.overflow = '';
   }
 
   getSafeUrl(fileUrl: string): string {
     if (!fileUrl) return '';
-    const preview = this.getPreviewUrl(fileUrl);
-    if (preview) {
-      return (preview as any).changingThisBreaksApplicationSecurity || fileUrl;
+    // Используем getPreviewUrl, который теперь возвращает строку
+    return this.getPreviewUrl(fileUrl);
+  }
+
+  getDocxPreview(fileUrl: string): string | null {
+    return this.docxPreviews.get(fileUrl) || null;
+  }
+
+  loadDocxPreview(fileUrl: string): void {
+    if (!this.docxViewerService.isDocxFile(fileUrl)) {
+      return;
     }
-    return fileUrl;
+
+    // Если превью уже загружено или загружается, не загружаем снова
+    if (this.docxPreviews.has(fileUrl) || this.loadingPreviews.has(fileUrl)) {
+      return;
+    }
+
+    this.loadingPreviews.add(fileUrl);
+    this.docxViewerService.getDocxPreview(fileUrl, 400).subscribe({
+      next: (preview) => {
+        this.docxPreviews.set(fileUrl, preview);
+        this.loadingPreviews.delete(fileUrl);
+      },
+      error: (error) => {
+        console.error('Ошибка при загрузке превью Word документа:', error);
+        this.docxPreviews.set(fileUrl, 'Не удалось загрузить превью');
+        this.loadingPreviews.delete(fileUrl);
+      },
+    });
+  }
+
+  isLoadingPreview(fileUrl: string): boolean {
+    return this.loadingPreviews.has(fileUrl);
   }
 
 
