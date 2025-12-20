@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +36,12 @@ export class CertificatesSectionComponent implements OnInit {
   // Состояние развернутости карточек
   expandedCards: Set<string> = new Set();
 
+  // Пагинация и бесконечный скролл
+  private skip = 0;
+  private readonly take = 5;
+  hasMore = true;
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private teachersService: TeachersService,
@@ -47,6 +53,7 @@ export class CertificatesSectionComponent implements OnInit {
     // username находится в родительском роуте для публичных страниц
     this.route.parent?.params.subscribe((parentParams) => {
       this.username = parentParams['username'];
+      this.resetPagination();
       if (this.username) {
         this.loadPublicCertificates();
       } else {
@@ -56,24 +63,80 @@ export class CertificatesSectionComponent implements OnInit {
     });
   }
 
-  loadPublicCertificates() {
-    if (this.username) {
-      this.teachersService.getPublications(this.username).subscribe({
-        next: (publications) => {
-          // Фильтруем только сертификаты
-          this.certificates = publications.filter(p => p.type === 'certificate');
-        },
-      });
-    }
+  private resetPagination() {
+    this.skip = 0;
+    this.hasMore = true;
+    this.certificates = [];
   }
 
-  loadOwnCertificates() {
-    this.teachersService.getOwnPublications().subscribe({
-      next: (publications) => {
-        // Фильтруем только сертификаты
-        this.certificates = publications.filter(p => p.type === 'certificate');
+  loadPublicCertificates(reset = false) {
+    if (!this.username || this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getCertificates(this.username, this.skip, this.take).subscribe({
+      next: (certificates) => {
+        if (reset) {
+          this.certificates = certificates;
+        } else {
+          this.certificates = [...this.certificates, ...certificates];
+        }
+
+        this.hasMore = certificates.length === this.take;
+        this.skip += certificates.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
       },
     });
+  }
+
+  loadOwnCertificates(reset = false) {
+    if (this.isLoading || (!this.hasMore && !reset)) return;
+
+    if (reset) {
+      this.resetPagination();
+    }
+
+    this.isLoading = true;
+    this.teachersService.getOwnCertificates(this.skip, this.take).subscribe({
+      next: (certificates) => {
+        if (reset) {
+          this.certificates = certificates;
+        } else {
+          this.certificates = [...this.certificates, ...certificates];
+        }
+
+        this.hasMore = certificates.length === this.take;
+        this.skip += certificates.length;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.isLoading = false;
+      },
+    });
+  }
+
+  @HostListener('window:scroll', ['$event'])
+  onScroll() {
+    if (this.isLoading || !this.hasMore) return;
+
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
+    // Загружаем следующую порцию, когда пользователь прокрутил до 80% страницы
+    if (scrollTop + windowHeight >= documentHeight * 0.8) {
+      if (this.username) {
+        this.loadPublicCertificates();
+      } else {
+        this.loadOwnCertificates();
+      }
+    }
   }
 
   onFileSelect(event: Event) {
@@ -136,7 +199,7 @@ export class CertificatesSectionComponent implements OnInit {
     if (this.editingCertificateId) {
       this.teachersService.updatePublication(this.editingCertificateId, this.newCertificate as any).subscribe({
         next: () => {
-          this.loadOwnCertificates();
+          this.loadOwnCertificates(true);
           this.cancelEdit();
         },
         error: () => {
@@ -149,7 +212,7 @@ export class CertificatesSectionComponent implements OnInit {
     } else {
       this.teachersService.createPublication(this.newCertificate as any).subscribe({
         next: () => {
-          this.loadOwnCertificates();
+          this.loadOwnCertificates(true);
           this.cancelEdit();
         },
         error: () => {
@@ -196,7 +259,7 @@ export class CertificatesSectionComponent implements OnInit {
     if (confirm('Удалить этот сертификат?')) {
       this.teachersService.deletePublication(id).subscribe({
         next: () => {
-          this.loadOwnCertificates();
+          this.loadOwnCertificates(true);
         },
       });
     }
@@ -323,3 +386,4 @@ export class CertificatesSectionComponent implements OnInit {
     }
   }
 }
+

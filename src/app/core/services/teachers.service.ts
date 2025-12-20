@@ -259,6 +259,37 @@ export class TeachersService {
     );
   }
 
+  // Certificates
+  getCertificates(
+    usernameOrTeacherId?: string,
+    skip?: number,
+    take?: number,
+  ): Observable<Publication[]> {
+    let url = '';
+    if (usernameOrTeacherId) {
+      url = `${this.apiUrl}/teachers/${usernameOrTeacherId}/certificates`;
+    } else {
+      url = `${this.apiUrl}/teachers/me/certificates`;
+    }
+
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Publication[]>(url, { params });
+  }
+
+  getOwnCertificates(skip?: number, take?: number): Observable<Publication[]> {
+    const params: any = {};
+    if (skip !== undefined) params.skip = skip.toString();
+    if (take !== undefined) params.take = take.toString();
+
+    return this.http.get<Publication[]>(
+      `${this.apiUrl}/teachers/me/certificates`,
+      { params },
+    );
+  }
+
   // Parent Sections
   getParentSections(
     usernameOrTeacherId?: string,
@@ -431,6 +462,7 @@ export class TeachersService {
     });
   }
 }
+
 
 
 
