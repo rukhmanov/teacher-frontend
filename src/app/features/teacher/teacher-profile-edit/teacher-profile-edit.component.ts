@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TeachersService } from '../../../core/services/teachers.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,6 +10,7 @@ import { TeacherProfile, SocialLink, SocialPlatform } from '../../../core/models
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
 import { AddressMapComponent } from '../../../shared/components/address-map/address-map.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-teacher-profile-edit',
@@ -30,6 +32,8 @@ export class TeacherProfileEditComponent implements OnInit {
   isAddressValid: boolean = false; // Флаг валидности адреса
   useVideoUpload = false;
   selectedVideoFile: File | null = null;
+  isUploadingVideo = false; // Флаг загрузки видео файла
+  isSaving = false; // Флаг сохранения профиля
 
   router = inject(Router);
 
@@ -37,6 +41,7 @@ export class TeacherProfileEditComponent implements OnInit {
     private teachersService: TeachersService,
     private uploadService: UploadService,
     private authService: AuthService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit() {
@@ -143,9 +148,21 @@ export class TeacherProfileEditComponent implements OnInit {
 
   private saveProfile() {
     if (this.profile) {
+      console.log('Сохранение профиля:', this.profile);
+      console.log('VideoUrl:', this.profile.videoUrl);
+      
+      this.isSaving = true;
       this.teachersService.updateProfile(this.profile).subscribe({
-        next: () => {
+        next: (updatedProfile) => {
+          console.log('Профиль успешно обновлен:', updatedProfile);
+          this.profile = updatedProfile; // Обновляем локальный профиль с данными с сервера
+          this.isSaving = false;
           alert('Профиль обновлен');
+        },
+        error: (err) => {
+          console.error('Ошибка при обновлении профиля:', err);
+          this.isSaving = false;
+          alert(`Ошибка при обновлении профиля: ${err.message || 'Неизвестная ошибка'}`);
         },
       });
     }
@@ -183,15 +200,19 @@ export class TeacherProfileEditComponent implements OnInit {
       this.selectedVideoFile = input.files[0];
       if (this.selectedVideoFile && this.profile) {
         // Загружаем видео файл
+        this.isUploadingVideo = true;
         this.uploadService.uploadFile(this.selectedVideoFile).subscribe({
           next: (response) => {
             if (this.profile) {
               this.profile.videoUrl = response.url;
               this.selectedVideoFile = null;
             }
+            this.isUploadingVideo = false;
           },
-          error: () => {
+          error: (err) => {
+            console.error('Ошибка при загрузке видео файла:', err);
             alert('Ошибка при загрузке видео файла');
+            this.isUploadingVideo = false;
           },
         });
       }
@@ -326,6 +347,44 @@ export class TeacherProfileEditComponent implements OnInit {
         });
       }
     }
+  }
+
+  /**
+   * Получает прокси URL для просмотра видео файла (для обхода CORS)
+   */
+  getVideoProxyUrl(videoUrl: string | undefined): string | null {
+    if (!videoUrl) return null;
+    
+    // Если это URL видеохостинга (YouTube, Vimeo), возвращаем как есть
+    if (this.isVideoUrl(videoUrl)) {
+      return videoUrl;
+    }
+    
+    // Для прямых видео файлов используем прокси
+    if (this.isDirectVideoFile(videoUrl)) {
+      let relativePath = videoUrl;
+      
+      try {
+        const url = new URL(videoUrl);
+        relativePath = url.pathname.substring(1);
+      } catch (e) {
+        // Если не удалось распарсить как URL, используем как есть
+      }
+      
+      return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}`;
+    }
+    
+    // Для других URL возвращаем как есть
+    return videoUrl;
+  }
+
+  /**
+   * Получает безопасный URL для видео (с использованием DomSanitizer)
+   */
+  getSafeVideoUrl(videoUrl: string | undefined): SafeResourceUrl | null {
+    const proxyUrl = this.getVideoProxyUrl(videoUrl);
+    if (!proxyUrl) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(proxyUrl);
   }
 }
 

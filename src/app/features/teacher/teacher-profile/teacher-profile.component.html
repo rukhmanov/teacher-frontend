@@ -25,9 +25,6 @@
               </button>
             </div>
             <div class="video-container" [class.expanded]="isVideoExpanded">
-              <!-- Прямые видео файлы -->
-              <video *ngIf="isDirectVideoFile(teacher.videoUrl)" [src]="teacher.videoUrl" controls
-                class="video-player"></video>
               <!-- YouTube -->
               <iframe *ngIf="isYouTubeUrl(teacher.videoUrl) && getYouTubeEmbedUrl(teacher.videoUrl)"
                 [src]="getYouTubeEmbedUrl(teacher.videoUrl)!" frameborder="0"
@@ -37,10 +34,14 @@
               <iframe *ngIf="isVimeoUrl(teacher.videoUrl) && getVimeoEmbedUrl(teacher.videoUrl)"
                 [src]="getVimeoEmbedUrl(teacher.videoUrl)!" frameborder="0"
                 allow="autoplay; fullscreen; picture-in-picture" allowfullscreen class="video-iframe"></iframe>
-              <!-- Другие URL - пробуем показать как видео -->
+              <!-- Прямые видео файлы - используем прокси URL для обхода CORS -->
+              <video *ngIf="isDirectVideoFile(teacher.videoUrl) && getSafeVideoUrl(teacher.videoUrl)"
+                [src]="getSafeVideoUrl(teacher.videoUrl)!" controls
+                class="video-player"></video>
+              <!-- Другие URL - пробуем показать как видео через прокси -->
               <video
-                *ngIf="!isDirectVideoFile(teacher.videoUrl) && !isYouTubeUrl(teacher.videoUrl) && !isVimeoUrl(teacher.videoUrl)"
-                [src]="teacher.videoUrl" controls class="video-player"></video>
+                *ngIf="!isDirectVideoFile(teacher.videoUrl) && !isYouTubeUrl(teacher.videoUrl) && !isVimeoUrl(teacher.videoUrl) && getSafeVideoUrl(teacher.videoUrl)"
+                [src]="getSafeVideoUrl(teacher.videoUrl)!" controls class="video-player"></video>
             </div>
           </div>
         </div>

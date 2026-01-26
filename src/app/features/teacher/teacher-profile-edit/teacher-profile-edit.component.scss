@@ -232,6 +232,33 @@
         outline: none;
         border-color: var(--primary-orange);
       }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .video-upload-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      margin-top: 0.75rem;
+      background: rgba(255, 107, 107, 0.1);
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      color: var(--primary-orange);
+      font-weight: 500;
+
+      i {
+        font-size: 1.25rem;
+        animation: spin 1s linear infinite;
+      }
+
+      span {
+        flex: 1;
+      }
     }
   }
 
@@ -420,5 +447,24 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-primary {
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i.fa-spinner {
+    margin-right: 0.5rem;
+  }
+}
 
 

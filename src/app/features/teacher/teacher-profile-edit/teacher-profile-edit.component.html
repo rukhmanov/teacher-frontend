@@ -93,17 +93,21 @@
               </div>
               <div *ngIf="useVideoUpload" class="video-file-input">
                 <input type="file" class="form-control" (change)="onVideoFileSelect($event)" accept="video/*"
-                  #videoFileInput />
-                <small class="form-hint" *ngIf="selectedVideoFile">
+                  #videoFileInput [disabled]="isUploadingVideo" />
+                <div *ngIf="isUploadingVideo" class="video-upload-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Загрузка видео файла... Это может занять некоторое время</span>
+                </div>
+                <small class="form-hint" *ngIf="selectedVideoFile && !isUploadingVideo">
                   Выбран файл: {{ selectedVideoFile.name }} ({{ (selectedVideoFile.size / 1024 / 1024).toFixed(2) }} MB)
                 </small>
-                <small class="form-hint" *ngIf="!selectedVideoFile">
-                  Поддерживаемые форматы: MP4, WebM, MOV (макс. 100 MB)
+                <small class="form-hint" *ngIf="!selectedVideoFile && !isUploadingVideo">
+                  Поддерживаемые форматы: MP4, WebM, MOV (макс. 200 MB)
                 </small>
               </div>
               <div *ngIf="profile.videoUrl" class="video-preview">
-                <video [src]="profile.videoUrl" controls class="video-preview-player"
-                  *ngIf="!isVideoUrl(profile.videoUrl)"></video>
+                <video *ngIf="!isVideoUrl(profile.videoUrl) && getSafeVideoUrl(profile.videoUrl)" 
+                  [src]="getSafeVideoUrl(profile.videoUrl)!" controls class="video-preview-player"></video>
                 <div *ngIf="isVideoUrl(profile.videoUrl)" class="video-url-preview">
                   <i class="fas fa-video"></i>
                   <span>Видео визитка: {{ profile.videoUrl }}</span>
@@ -130,7 +134,12 @@
             <label class="form-label">О себе</label>
             <textarea class="form-control" [(ngModel)]="profile.bio" name="bio" rows="5"></textarea>
           </div>
-          <button type="submit" class="btn btn-primary">Сохранить</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSaving || isUploadingVideo">
+            <i class="fas fa-spinner fa-spin" *ngIf="isSaving"></i>
+            <i class="fas fa-save" *ngIf="!isSaving"></i>
+            <span *ngIf="!isSaving">Сохранить</span>
+            <span *ngIf="isSaving">Сохранение...</span>
+          </button>
         </form>
 
         <!-- Danger Zone -->

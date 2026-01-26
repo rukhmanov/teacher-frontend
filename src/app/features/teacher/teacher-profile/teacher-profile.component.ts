@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TeacherProfile } from '../../../core/models/teacher.interface';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { PlaceholderUtil } from '../../../core/utils/placeholder.util';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-teacher-profile',
@@ -153,7 +154,46 @@ export class TeacherProfileComponent implements OnInit {
   toggleVideo() {
     this.isVideoExpanded = !this.isVideoExpanded;
   }
+
+  /**
+   * Получает прокси URL для просмотра видео файла (для обхода CORS)
+   */
+  getVideoProxyUrl(videoUrl: string | undefined): string | null {
+    if (!videoUrl) return null;
+    
+    // Если это URL видеохостинга (YouTube, Vimeo), возвращаем как есть
+    if (this.isYouTubeUrl(videoUrl) || this.isVimeoUrl(videoUrl)) {
+      return videoUrl;
+    }
+    
+    // Для прямых видео файлов используем прокси
+    if (this.isDirectVideoFile(videoUrl)) {
+      let relativePath = videoUrl;
+      
+      try {
+        const url = new URL(videoUrl);
+        relativePath = url.pathname.substring(1);
+      } catch (e) {
+        // Если не удалось распарсить как URL, используем как есть
+      }
+      
+      return `${environment.apiUrl}/upload/proxy?path=${encodeURIComponent(relativePath)}`;
+    }
+    
+    // Для других URL возвращаем как есть
+    return videoUrl;
+  }
+
+  /**
+   * Получает безопасный URL для видео (с использованием DomSanitizer)
+   */
+  getSafeVideoUrl(videoUrl: string | undefined): SafeResourceUrl | null {
+    const proxyUrl = this.getVideoProxyUrl(videoUrl);
+    if (!proxyUrl) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(proxyUrl);
+  }
 }
+
 
 
 
